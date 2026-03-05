@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
     const type = searchParams.get("type") || "all";
+    const includeSeats = searchParams.get("includeSeats") === "true";
 
     const where: Prisma.HallWhereInput = {};
     
@@ -42,10 +43,22 @@ export async function GET(request: NextRequest) {
             seats: true,
           },
         },
+        ...(includeSeats && {
+          seats: {
+            orderBy: [{ row: "asc" }, { column: "asc" }],
+          },
+        }),
       },
     });
 
-    return NextResponse.json({ halls });
+    const hallsWithRowConfigs = halls.map((hall) => ({
+      ...hall,
+      rowConfigs: (hall as { rowConfigs?: unknown }).rowConfigs as
+        | Array<{ startRow: string; endRow: string; seatType: string }>
+        | undefined,
+    }));
+
+    return NextResponse.json({ halls: hallsWithRowConfigs });
   } catch (error) {
     console.error("Error fetching halls:", error);
     return NextResponse.json(
@@ -117,7 +130,11 @@ export async function POST(request: NextRequest) {
           name: name.trim(),
           hallType: hallType || "STANDARD",
           capacity,
+          rows,
           columns,
+          rowConfigs: (rowConfigs && rowConfigs.length > 0) 
+            ? rowConfigs as unknown as Prisma.InputJsonValue
+            : undefined,
           isActive: isActive !== undefined ? isActive : true,
           isPublished: false,
           version: 1,

@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { SeatGrid } from "@/components/seats/SeatGrid";
+import { Seat, SeatType, SeatStatus } from "@/types/seat";
 
 interface Hall {
   id: string;
@@ -11,6 +13,19 @@ interface Hall {
   columns: number;
   isActive: boolean;
   createdAt: string;
+  seats?: Array<{
+    id: string;
+    row: string;
+    column: number;
+    seatNumber: number | null;
+    seatType: string;
+    status: string;
+  }>;
+  rowConfigs?: Array<{
+    startRow: string;
+    endRow: string;
+    seatType: string;
+  }>;
   _count: {
     showtimes: number;
     seats: number;
@@ -53,6 +68,68 @@ export default function HallDetailPanel({
   isMobile = false,
   onBackToList,
 }: HallDetailPanelProps) {
+  const getSeatsForGrid = (hallData: Hall): Seat[] => {
+    if (hallData.seats && hallData.seats.length > 0) {
+      return hallData.seats.map((seat) => ({
+        id: seat.id,
+        hallId: hallData.id,
+        row: seat.row,
+        column: seat.column,
+        number: seat.seatNumber || seat.column + 1,
+        seatNumber: seat.seatNumber,
+        seatType: seat.seatType as SeatType,
+        status: (seat.status?.toUpperCase() as SeatStatus) || "AVAILABLE",
+      }));
+    }
+
+    if (hallData.rowConfigs && hallData.rowConfigs.length > 0) {
+      const seats: Seat[] = [];
+      for (let rowIdx = 0; rowIdx < hallData.rows; rowIdx++) {
+        const row = String.fromCharCode(65 + rowIdx);
+        for (let col = 0; col < hallData.columns; col++) {
+          let seatType: SeatType = "REGULAR";
+          for (const config of hallData.rowConfigs) {
+            const startIdx = config.startRow.charCodeAt(0) - 65;
+            const endIdx = config.endRow.charCodeAt(0) - 65;
+            if (rowIdx >= startIdx && rowIdx <= endIdx) {
+              seatType = config.seatType as SeatType;
+              break;
+            }
+          }
+          seats.push({
+            id: `${hallData.id}-${row}-${col}`,
+            hallId: hallData.id,
+            row,
+            column: col,
+            number: col + 1,
+            seatNumber: col + 1,
+            seatType,
+            status: "AVAILABLE",
+          });
+        }
+      }
+      return seats;
+    }
+
+    const seats: Seat[] = [];
+    for (let rowIdx = 0; rowIdx < hallData.rows; rowIdx++) {
+      const row = String.fromCharCode(65 + rowIdx);
+      for (let col = 0; col < hallData.columns; col++) {
+        seats.push({
+          id: `${hallData.id}-${row}-${col}`,
+          hallId: hallData.id,
+          row,
+          column: col,
+          number: col + 1,
+          seatNumber: col + 1,
+          seatType: "REGULAR",
+          status: "AVAILABLE",
+        });
+      }
+    }
+    return seats;
+  };
+
   if (!hall) {
     return (
       <div className="h-full flex items-center justify-center p-8 text-gray-500">
@@ -111,7 +188,7 @@ export default function HallDetailPanel({
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
         {/* Status Section */}
         <div className="bg-white rounded-xl border p-4">
           <div className="flex items-center justify-between">
@@ -159,17 +236,10 @@ export default function HallDetailPanel({
                 </svg>
               </div>
               <div>
-                <p className="text-xs font-medium text-blue-600 uppercase">
-                  Showtimes
-                </p>
-                <p className="text-2xl font-bold text-blue-900">
-                  {hall._count.showtimes}
-                </p>
+                <p className="text-xs font-medium text-blue-600 uppercase">Showtimes</p>
+                <p className="text-2xl font-bold text-blue-900">{hall._count.showtimes}</p>
               </div>
             </div>
-            <p className="text-xs text-blue-700 mt-2">
-              {hall._count.showtimes === 1 ? "Scheduled" : "Scheduled"}
-            </p>
           </div>
 
           <div className="bg-linear-to-br from-green-50 to-green-100 rounded-xl p-4 border border-green-200">
@@ -190,17 +260,39 @@ export default function HallDetailPanel({
                 </svg>
               </div>
               <div>
-                <p className="text-xs font-medium text-green-600 uppercase">
-                  Seats
-                </p>
-                <p className="text-2xl font-bold text-green-900">
-                  {hall._count.seats}
-                </p>
+                <p className="text-xs font-medium text-green-600 uppercase">Seats</p>
+                <p className="text-2xl font-bold text-green-900">{hall._count.seats}</p>
               </div>
             </div>
-            <p className="text-xs text-green-700 mt-2">Configured</p>
           </div>
         </div>
+
+        {/* Seat Preview */}
+        {(hall.seats?.length || hall.rowConfigs) && (
+          <div className="bg-white rounded-xl border p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-sm font-bold text-gray-900 uppercase tracking-tight">
+                Hall Layout Preview
+              </h3>
+            </div>
+
+            <div className="overflow-x-auto pb-4 scrollbar-hide -mx-2">
+              <SeatGrid
+                seats={getSeatsForGrid(hall)}
+                columns={hall.columns}
+                selectedSeats={new Set()}
+                viewMode="admin"
+                hallName={hall.name}
+                isDragging={false}
+                onSeatClick={() => {}}
+                onMouseDown={() => {}}
+                onMouseEnter={() => {}}
+                onMouseUp={() => {}}
+                onContextMenu={() => {}}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Capacity Info */}
         <div className="bg-gray-50 rounded-xl p-4 border">
@@ -222,60 +314,14 @@ export default function HallDetailPanel({
                 </svg>
               </div>
               <div>
-                <p className="text-sm font-semibold text-gray-900">
-                  Total Capacity
-                </p>
+                <p className="text-sm font-semibold text-gray-900">Total Capacity</p>
                 <p className="text-2xl font-bold text-gray-900">
                   {hall.capacity}
-                  <span className="text-sm font-normal text-gray-500 ml-1">
-                    seats
-                  </span>
+                  <span className="text-sm font-normal text-gray-500 ml-1">seats</span>
                 </p>
               </div>
             </div>
-            {hall._count.seats > 0 && hall._count.seats !== hall.capacity && (
-              <div
-                className={`text-xs px-2 py-1 rounded ${
-                  hall._count.seats < hall.capacity
-                    ? "bg-yellow-100 text-yellow-800"
-                    : "bg-red-100 text-red-800"
-                }`}
-              >
-                {hall._count.seats < hall.capacity
-                  ? `${hall.capacity - hall._count.seats} unconfigured`
-                  : "Overconfigured"}
-              </div>
-            )}
           </div>
-        </div>
-
-        {/* Seat Configuration */}
-        <div className="bg-white rounded-xl border p-4">
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">
-            Seat Configuration
-          </h3>
-          <p className="text-xs text-gray-500 mb-4">
-            Manage seat layout, types, and availability for this hall.
-          </p>
-          <Link
-            href={`/admin/halls/${hall.id}/seats`}
-            className="inline-flex items-center px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-100 transition-colors"
-          >
-            <svg
-              className="w-4 h-4 mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
-              />
-            </svg>
-            Configure Seats
-          </Link>
         </div>
 
         {/* Quick Actions */}
@@ -284,38 +330,12 @@ export default function HallDetailPanel({
             onClick={onEdit}
             className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
           >
-            <svg
-              className="w-4 h-4 mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-              />
-            </svg>
             Edit
           </button>
           <button
             onClick={onDelete}
             className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-red-300 rounded-lg text-sm font-medium text-red-700 hover:bg-red-50 transition-colors"
           >
-            <svg
-              className="w-4 h-4 mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-              />
-            </svg>
             Delete
           </button>
         </div>

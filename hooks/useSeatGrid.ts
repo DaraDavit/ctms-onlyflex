@@ -196,7 +196,7 @@ export function useSeatGrid(
     setDragStart(null);
   }, []);
 
-  // Create loveseat
+  // Create twinseat
   const createLoveseat = useCallback((leftSeatId: string, columns: number): boolean => {
     const leftSeat = seats.find(s => s.id === leftSeatId);
     if (!leftSeat) return false;
@@ -211,16 +211,16 @@ export function useSeatGrid(
 
     if (!rightSeat) return false;
     if (rightSeat.status === 'INACTIVE') return false;
-    if (rightSeat.seatType.startsWith('LOVESEAT')) return false;
+    if (rightSeat.seatType === 'TWINSEAT') return false;
 
     // Update both seats
     setSeatsState(prev => {
       const newSeats = prev.map(seat => {
         if (seat.id === leftSeatId) {
-          return { ...seat, seatType: 'LOVESEAT_LEFT' as const, linkedSeatId: rightSeat.id };
+          return { ...seat, seatType: 'TWINSEAT' as const };
         }
         if (seat.id === rightSeat.id) {
-          return { ...seat, seatType: 'LOVESEAT_RIGHT' as const, linkedSeatId: leftSeatId };
+          return { ...seat, seatType: 'TWINSEAT' as const };
         }
         return seat;
       });
@@ -231,17 +231,15 @@ export function useSeatGrid(
     return true;
   }, [seats]);
 
-  // Delete/convert loveseat
+  // Delete/convert twinseat
   const deleteLoveseat = useCallback((seatId: string) => {
     const seat = seats.find(s => s.id === seatId);
-    if (!seat || !seat.seatType.startsWith('LOVESEAT')) return;
+    if (!seat || seat.seatType !== 'TWINSEAT') return;
 
-    const linkedId = seat.linkedSeatId;
-    
     setSeatsState(prev => {
       const newSeats = prev.map(s => {
-        if (s.id === seatId || s.id === linkedId) {
-          return { ...s, seatType: 'REGULAR' as const, linkedSeatId: null };
+        if (s.id === seatId || (s.row === seat.row && s.column === seat.column + 1 && s.seatType === 'TWINSEAT')) {
+          return { ...s, seatType: 'REGULAR' as const };
         }
         return s;
       });

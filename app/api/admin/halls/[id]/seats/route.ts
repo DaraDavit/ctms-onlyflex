@@ -43,10 +43,10 @@ export async function GET(
       hallId: s.hallId,
       row: s.row,
       column: s.column,
+      number: s.number,
       seatNumber: s.seatNumber,
       seatType: s.seatType as Seat['seatType'],
-      status: s.status as Seat['status'],
-      linkedSeatId: s.linkedSeatId
+      status: s.status as Seat['status']
     }));
 
     const breakdown = calculateTotalCapacity(typedSeats);
@@ -113,10 +113,10 @@ export async function PUT(
       hallId: id,
       row: s.row,
       column: s.column,
+      number: s.number ?? 0,
       seatNumber: s.seatNumber,
       seatType: s.seatType,
-      status: s.status,
-      linkedSeatId: s.linkedSeatId
+      status: s.status
     }));
 
     // STRICT VALIDATION
@@ -168,10 +168,10 @@ export async function PUT(
           hallId: id,
           row: seat.row,
           column: seat.column,
+          number: seat.number,
           seatNumber: seat.seatNumber,
           seatType: seat.seatType,
-          status: seat.status,
-          linkedSeatId: seat.linkedSeatId
+          status: seat.status
         }))
       });
 
@@ -279,10 +279,10 @@ export async function POST(
           hallId: id,
           row: seat.row,
           column: seat.column,
+          number: seat.number,
           seatNumber: seat.seatNumber,
           seatType: seat.seatType,
-          status: seat.status,
-          linkedSeatId: seat.linkedSeatId
+          status: seat.status
         }))
       });
 

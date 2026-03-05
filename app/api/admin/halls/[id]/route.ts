@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { PrismaClient } from "@/app/generated/prisma/client";
+import { Prisma, PrismaClient } from "@/app/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
+import { generateSeatsFromRowConfigs, RowConfig } from "@/lib/hall-utils";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -30,6 +31,9 @@ export async function GET(
             seats: true,
           },
         },
+        seats: {
+          orderBy: [{ row: "asc" }, { column: "asc" }],
+        },
       },
     });
 
@@ -37,7 +41,14 @@ export async function GET(
       return NextResponse.json({ error: "Hall not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ hall });
+    return NextResponse.json({
+      hall: {
+        ...hall,
+        rowConfigs: (hall as { rowConfigs?: unknown }).rowConfigs as
+          | Array<{ startRow: string; endRow: string; seatType: string }>
+          | undefined,
+      },
+    });
   } catch (error) {
     console.error("Error fetching hall:", error);
     return NextResponse.json(
@@ -60,7 +71,7 @@ export async function PUT(
 
     const { id } = await params;
     const body = await request.json();
-    const { name, hallType, capacity, isActive } = body;
+    const { name, hallType, capacity, isActive, rows, columns, rowConfigs } = body;
 
     // Check if hall exists
     const existingHall = await prisma.hall.findUnique({
@@ -100,14 +111,176 @@ export async function PUT(
       }
     }
 
+    // Determine rows and columns (use existing if not provided)
+    const newRows = rows || existingHall.rows;
+    const newColumns = columns || existingHall.columns;
+
+    // Use transaction to update hall and regenerate seats if rowConfigs provided
+    const hall = await prisma.$transaction(async (tx) => {
+      // Update hall basic info
+      const updatedHall = await tx.hall.update({
+        where: { id },
+        data: {
+          ...(name && { name: name.trim() }),
+          ...(hallType && { hallType }),
+          ...(capacity && { capacity: parseInt(capacity) }),
+          ...(isActive !== undefined && { isActive }),
+          ...(rows && { rows }),
+          ...(columns && { columns }),
+          ...(rowConfigs && { rowConfigs: rowConfigs as unknown as Prisma.InputJsonValue }),
+        },
+      });
+
+      // If rowConfigs provided, regenerate all seats
+      if (rowConfigs && rowConfigs.length > 0) {
+        // Delete all existing seats
+        await tx.seat.deleteMany({ where: { hallId: id } });
+
+        // Generate new seats from rowConfigs
+        const seatsToCreate = generateSeatsFromRowConfigs(
+          newRows,
+          newColumns,
+          rowConfigs as RowConfig[],
+          id
+        );
+
+        // Create new seats
+        await tx.seat.createMany({
+          data: seatsToCreate,
+        });
+      }
+
+      // Return updated hall with counts
+      return tx.hall.findUnique({
+        where: { id },
+        include: {
+          _count: {
+            select: {
+              showtimes: true,
+              seats: true,
+            },
+          },
+        },
+      });
+    });
+
+    return NextResponse.json({ 
+      hall: {
+        ...hall,
+        rowConfigs: (hall as { rowConfigs?: unknown }).rowConfigs as
+          | Array<{ startRow: string; endRow: string; seatType: string }>
+          | undefined,
+      } 
+    });
+  } catch (error) {
+    console.error("Error updating hall:", error);
+    return NextResponse.json(
+      { error: "Failed to update hall" },
+      { status: 500 }
+    );
+  }
+}
+
+// PATCH /api/admin/halls/[id] - Update hall with form data including rowConfigs
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await auth();
+    if (!session || session.user.role !== "ADMIN") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await params;
+    
+    const contentType = request.headers.get("content-type") || "";
+    let body: Record<string, unknown>;
+
+    if (contentType.includes("application/json")) {
+      body = await request.json();
+    } else if (contentType.includes("application/form-data") || contentType.includes("multipart/form-data")) {
+      const formData = await request.formData();
+      body = {};
+      formData.forEach((value, key) => {
+        if (key === "rowConfigs") {
+          try {
+            body[key] = JSON.parse(value as string);
+          } catch {
+            body[key] = value;
+          }
+        } else if (key === "capacity" || key === "rows" || key === "columns") {
+          body[key] = parseInt(value as string, 10);
+        } else if (key === "isActive") {
+          body[key] = value === "true" || value === "1";
+        } else {
+          body[key] = value;
+        }
+      });
+    } else {
+      return NextResponse.json(
+        { error: "Unsupported content type" },
+        { status: 415 }
+      );
+    }
+
+    const { name, hallType, capacity, rows, columns, isActive, rowConfigs } = body;
+
+    const existingHall = await prisma.hall.findUnique({
+      where: { id },
+    });
+
+    if (!existingHall) {
+      return NextResponse.json({ error: "Hall not found" }, { status: 404 });
+    }
+
+    if (name !== undefined && typeof name === "string" && !name.trim()) {
+      return NextResponse.json(
+        { error: "Hall name is required" },
+        { status: 400 }
+      );
+    }
+
+    if (name && typeof name === "string" && name !== existingHall.name) {
+      const duplicateHall = await prisma.hall.findFirst({
+        where: { name: { equals: name.trim(), mode: "insensitive" } },
+      });
+
+      if (duplicateHall) {
+        return NextResponse.json(
+          { error: "A hall with this name already exists" },
+          { status: 400 }
+        );
+      }
+    }
+
+    const updateData: Record<string, unknown> = {};
+
+    if (name !== undefined) {
+      updateData.name = (name as string).trim();
+    }
+    if (hallType !== undefined) {
+      updateData.hallType = hallType;
+    }
+    if (capacity !== undefined) {
+      updateData.capacity = capacity;
+    }
+    if (rows !== undefined) {
+      updateData.rows = rows;
+    }
+    if (columns !== undefined) {
+      updateData.columns = columns;
+    }
+    if (isActive !== undefined) {
+      updateData.isActive = isActive;
+    }
+    if (rowConfigs !== undefined) {
+      updateData.rowConfigs = rowConfigs;
+    }
+
     const hall = await prisma.hall.update({
       where: { id },
-      data: {
-        ...(name && { name: name.trim() }),
-        ...(hallType && { hallType }),
-        ...(capacity && { capacity: parseInt(capacity) }),
-        ...(isActive !== undefined && { isActive }),
-      },
+      data: updateData,
       include: {
         _count: {
           select: {
@@ -120,7 +293,7 @@ export async function PUT(
 
     return NextResponse.json({ hall });
   } catch (error) {
-    console.error("Error updating hall:", error);
+    console.error("Error patching hall:", error);
     return NextResponse.json(
       { error: "Failed to update hall" },
       { status: 500 }

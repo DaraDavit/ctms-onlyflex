@@ -6,6 +6,7 @@ import HallDetailPanel from "./_components/HallDetailPanel";
 import HallForm from "./_components/HallForm";
 import HallDeleteConfirmModal from "./_components/HallDeleteConfirmModal";
 import { RowConfig } from "@/lib/hall-utils";
+import { usePolling } from "@/lib/use-polling";
 
 interface Hall {
   id: string;
@@ -16,6 +17,15 @@ interface Hall {
   columns: number;
   isActive: boolean;
   createdAt: string;
+  seats?: Array<{
+    id: string;
+    row: string;
+    column: number;
+    seatNumber: number | null;
+    seatType: string;
+    status: string;
+  }>;
+  rowConfigs?: RowConfig[];
   _count: {
     showtimes: number;
     seats: number;
@@ -81,6 +91,7 @@ export default function AdminHallsPage() {
       const params = new URLSearchParams();
       if (searchQuery) params.set("search", searchQuery);
       if (typeFilter !== "all") params.set("type", typeFilter);
+      params.set("includeSeats", "true");
 
       const response = await fetch(`/api/admin/halls?${params}`);
       const data = await response.json();
@@ -92,7 +103,14 @@ export default function AdminHallsPage() {
           const currentSelectedExists = selectedHall
             ? data.halls.find((h: Hall) => h.id === selectedHall.id)
             : false;
-          if (!currentSelectedExists) {
+          
+          if (currentSelectedExists && selectedHall) {
+            // Update with fresh data from server
+            const updatedHall = data.halls.find((h: Hall) => h.id === selectedHall.id);
+            if (updatedHall) {
+              setSelectedHall(updatedHall);
+            }
+          } else {
             setSelectedHall(data.halls[0]);
           }
         } else {
@@ -111,6 +129,22 @@ export default function AdminHallsPage() {
   useEffect(() => {
     fetchHalls();
   }, [fetchHalls]);
+
+  // Polling for live updates - pause when form is open (editing)
+  const { isPolling, lastUpdated } = usePolling({
+    interval: 5000,
+    enabled: !isFormOpen,
+    onPoll: fetchHalls,
+  });
+
+  // Format last updated time
+  const getLastUpdatedText = () => {
+    if (!lastUpdated) return "Never";
+    const seconds = Math.floor((Date.now() - lastUpdated.getTime()) / 1000);
+    if (seconds < 5) return "Just now";
+    if (seconds < 60) return `${seconds}s ago`;
+    return `${Math.floor(seconds / 60)}m ago`;
+  };
 
   // Handle hall selection
   const handleSelectHall = (hall: Hall) => {
@@ -259,11 +293,21 @@ export default function AdminHallsPage() {
     <div className="h-[calc(100vh-4rem)] flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b bg-white">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Hall Management</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {halls.length} {halls.length === 1 ? "hall" : "halls"} configured
-          </p>
+        <div className="flex items-center gap-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Hall Management</h1>
+            <p className="text-sm text-gray-500 mt-0.5">
+              {halls.length} {halls.length === 1 ? "hall" : "halls"} configured
+            </p>
+          </div>
+          {/* Live Indicator */}
+          <div className="flex items-center gap-2 text-sm">
+            <span className={`w-2 h-2 rounded-full ${isPolling ? "bg-green-500" : "bg-gray-300"} ${!isFormOpen && "animate-pulse"}`} />
+            <span className="text-gray-500">
+              {isFormOpen ? "Paused" : "Live"}
+              {lastUpdated && !isFormOpen && ` • ${getLastUpdatedText()}`}
+            </span>
+          </div>
         </div>
         <button
           onClick={() => setIsFormOpen(true)}

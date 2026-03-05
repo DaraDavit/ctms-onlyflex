@@ -14,7 +14,6 @@ import {
   preventSingleGap,
   getRowLabel,
   rowToIndex,
-  createLoveseatPair,
   convertLoveseatToRegular,
   validateSeatConfiguration,
   assignSeatNumbers,
@@ -26,8 +25,8 @@ import { Seat } from '@/types/seat';
 describe('calculateTotalCapacity', () => {
   it('counts regular seats as 1 unit', () => {
     const seats: Seat[] = [
-      { id: '1', hallId: 'hall1', row: 'A', column: 0, seatNumber: 1, seatType: 'REGULAR', status: 'AVAILABLE', linkedSeatId: null },
-      { id: '2', hallId: 'hall1', row: 'A', column: 1, seatNumber: 2, seatType: 'REGULAR', status: 'AVAILABLE', linkedSeatId: null }
+      { id: '1', hallId: 'hall1', row: 'A', column: 0, number: 1, seatNumber: 1, seatType: 'REGULAR', status: 'AVAILABLE' },
+      { id: '2', hallId: 'hall1', row: 'A', column: 1, number: 2, seatNumber: 2, seatType: 'REGULAR', status: 'AVAILABLE' }
     ];
     
     const result = calculateTotalCapacity(seats);
@@ -38,8 +37,8 @@ describe('calculateTotalCapacity', () => {
 
   it('counts VIP seats as 1 unit', () => {
     const seats: Seat[] = [
-      { id: '1', hallId: 'hall1', row: 'A', column: 0, seatNumber: 1, seatType: 'VIP', status: 'AVAILABLE', linkedSeatId: null },
-      { id: '2', hallId: 'hall1', row: 'A', column: 1, seatNumber: 2, seatType: 'VIP', status: 'AVAILABLE', linkedSeatId: null }
+      { id: '1', hallId: 'hall1', row: 'A', column: 0, number: 1, seatNumber: 1, seatType: 'VIP', status: 'AVAILABLE' },
+      { id: '2', hallId: 'hall1', row: 'A', column: 1, number: 2, seatNumber: 2, seatType: 'VIP', status: 'AVAILABLE' }
     ];
     
     const result = calculateTotalCapacity(seats);
@@ -47,24 +46,24 @@ describe('calculateTotalCapacity', () => {
     expect(result.vip).toBe(2);
   });
 
-  it('counts loveseats as 2 units (LEFT only, RIGHT is hidden)', () => {
+  it('counts twinseats as 2 units', () => {
     const seats: Seat[] = [
-      { id: '1', hallId: 'hall1', row: 'A', column: 0, seatNumber: 1, seatType: 'LOVESEAT_LEFT', status: 'AVAILABLE', linkedSeatId: '2' },
-      { id: '2', hallId: 'hall1', row: 'A', column: 1, seatNumber: 2, seatType: 'LOVESEAT_RIGHT', status: 'AVAILABLE', linkedSeatId: '1' }
+      { id: '1', hallId: 'hall1', row: 'A', column: 0, number: 1, seatNumber: 1, seatType: 'TWINSEAT', status: 'AVAILABLE' },
+      { id: '2', hallId: 'hall1', row: 'A', column: 1, number: 2, seatNumber: 2, seatType: 'TWINSEAT', status: 'AVAILABLE' }
     ];
     
     const result = calculateTotalCapacity(seats);
     expect(result.capacityUsed).toBe(2);
-    expect(result.loveseats).toBe(1);
-    expect(result.loveseatUnits).toBe(2);
-    expect(result.totalActive).toBe(1); // Only LEFT counts as active seat
+    expect(result.twinseats).toBe(1);
+    expect(result.twinseatUnits).toBe(2);
+    expect(result.totalActive).toBe(1);
   });
 
   it('excludes inactive seats from capacity', () => {
     const seats: Seat[] = [
-      { id: '1', hallId: 'hall1', row: 'A', column: 0, seatNumber: 1, seatType: 'REGULAR', status: 'AVAILABLE', linkedSeatId: null },
-      { id: '2', hallId: 'hall1', row: 'A', column: 1, seatNumber: null, seatType: 'REGULAR', status: 'INACTIVE', linkedSeatId: null },
-      { id: '3', hallId: 'hall1', row: 'A', column: 2, seatNumber: 2, seatType: 'REGULAR', status: 'AVAILABLE', linkedSeatId: null }
+      { id: '1', hallId: 'hall1', row: 'A', column: 0, number: 1, seatNumber: 1, seatType: 'REGULAR', status: 'AVAILABLE' },
+      { id: '2', hallId: 'hall1', row: 'A', column: 1, number: 0, seatNumber: null, seatType: 'REGULAR', status: 'INACTIVE' },
+      { id: '3', hallId: 'hall1', row: 'A', column: 2, number: 2, seatNumber: 2, seatType: 'REGULAR', status: 'AVAILABLE' }
     ];
     
     const result = calculateTotalCapacity(seats);
@@ -75,18 +74,18 @@ describe('calculateTotalCapacity', () => {
 
   it('handles mixed seat types correctly', () => {
     const seats: Seat[] = [
-      { id: '1', hallId: 'hall1', row: 'A', column: 0, seatNumber: 1, seatType: 'REGULAR', status: 'AVAILABLE', linkedSeatId: null },
-      { id: '2', hallId: 'hall1', row: 'A', column: 1, seatNumber: 2, seatType: 'VIP', status: 'AVAILABLE', linkedSeatId: null },
-      { id: '3', hallId: 'hall1', row: 'A', column: 2, seatNumber: 3, seatType: 'LOVESEAT_LEFT', status: 'AVAILABLE', linkedSeatId: '4' },
-      { id: '4', hallId: 'hall1', row: 'A', column: 3, seatNumber: 4, seatType: 'LOVESEAT_RIGHT', status: 'AVAILABLE', linkedSeatId: '3' },
-      { id: '5', hallId: 'hall1', row: 'A', column: 4, seatNumber: null, seatType: 'REGULAR', status: 'INACTIVE', linkedSeatId: null }
+      { id: '1', hallId: 'hall1', row: 'A', column: 0, number: 1, seatNumber: 1, seatType: 'REGULAR', status: 'AVAILABLE' },
+      { id: '2', hallId: 'hall1', row: 'A', column: 1, number: 2, seatNumber: 2, seatType: 'VIP', status: 'AVAILABLE' },
+      { id: '3', hallId: 'hall1', row: 'A', column: 2, number: 3, seatNumber: 3, seatType: 'TWINSEAT', status: 'AVAILABLE' },
+      { id: '4', hallId: 'hall1', row: 'A', column: 3, number: 4, seatNumber: 4, seatType: 'TWINSEAT', status: 'AVAILABLE' },
+      { id: '5', hallId: 'hall1', row: 'A', column: 4, number: 0, seatNumber: null, seatType: 'REGULAR', status: 'INACTIVE' }
     ];
     
     const result = calculateTotalCapacity(seats);
     expect(result.capacityUsed).toBe(4); // 1 + 1 + 2 + 0
     expect(result.regular).toBe(1);
     expect(result.vip).toBe(1);
-    expect(result.loveseats).toBe(1);
+    expect(result.twinseats).toBe(1);
     expect(result.inactive).toBe(1);
   });
 });
@@ -94,9 +93,9 @@ describe('calculateTotalCapacity', () => {
 describe('preventSingleGap', () => {
   it('allows booking when neighbors are available', () => {
     const seats: Seat[] = [
-      { id: '1', hallId: 'hall1', row: 'A', column: 0, seatNumber: 1, seatType: 'REGULAR', status: 'AVAILABLE', linkedSeatId: null },
-      { id: '2', hallId: 'hall1', row: 'A', column: 1, seatNumber: 2, seatType: 'REGULAR', status: 'AVAILABLE', linkedSeatId: null },
-      { id: '3', hallId: 'hall1', row: 'A', column: 2, seatNumber: 3, seatType: 'REGULAR', status: 'AVAILABLE', linkedSeatId: null }
+      { id: '1', hallId: 'hall1', row: 'A', column: 0, number: 1, seatNumber: 1, seatType: 'REGULAR', status: 'AVAILABLE' },
+      { id: '2', hallId: 'hall1', row: 'A', column: 1, number: 2, seatNumber: 2, seatType: 'REGULAR', status: 'AVAILABLE' },
+      { id: '3', hallId: 'hall1', row: 'A', column: 2, number: 3, seatNumber: 3, seatType: 'REGULAR', status: 'AVAILABLE' }
     ];
     
     const result = preventSingleGap(seats, '2');
@@ -105,9 +104,9 @@ describe('preventSingleGap', () => {
 
   it('prevents booking that would isolate left neighbor', () => {
     const seats: Seat[] = [
-      { id: '1', hallId: 'hall1', row: 'A', column: 0, seatNumber: 1, seatType: 'REGULAR', status: 'AVAILABLE', linkedSeatId: null },
-      { id: '2', hallId: 'hall1', row: 'A', column: 1, seatNumber: 2, seatType: 'REGULAR', status: 'AVAILABLE', linkedSeatId: null },
-      { id: '3', hallId: 'hall1', row: 'A', column: 2, seatNumber: 3, seatType: 'REGULAR', status: 'BOOKED', linkedSeatId: null }
+      { id: '1', hallId: 'hall1', row: 'A', column: 0, number: 1, seatNumber: 1, seatType: 'REGULAR', status: 'AVAILABLE' },
+      { id: '2', hallId: 'hall1', row: 'A', column: 1, number: 2, seatNumber: 2, seatType: 'REGULAR', status: 'AVAILABLE' },
+      { id: '3', hallId: 'hall1', row: 'A', column: 2, number: 3, seatNumber: 3, seatType: 'REGULAR', status: 'BOOKED' }
     ];
     
     const result = preventSingleGap(seats, '2');
@@ -117,9 +116,9 @@ describe('preventSingleGap', () => {
 
   it('prevents booking that would isolate right neighbor', () => {
     const seats: Seat[] = [
-      { id: '1', hallId: 'hall1', row: 'A', column: 0, seatNumber: 1, seatType: 'REGULAR', status: 'BOOKED', linkedSeatId: null },
-      { id: '2', hallId: 'hall1', row: 'A', column: 1, seatNumber: 2, seatType: 'REGULAR', status: 'AVAILABLE', linkedSeatId: null },
-      { id: '3', hallId: 'hall1', row: 'A', column: 2, seatNumber: 3, seatType: 'REGULAR', status: 'AVAILABLE', linkedSeatId: null }
+      { id: '1', hallId: 'hall1', row: 'A', column: 0, number: 1, seatNumber: 1, seatType: 'REGULAR', status: 'BOOKED' },
+      { id: '2', hallId: 'hall1', row: 'A', column: 1, number: 2, seatNumber: 2, seatType: 'REGULAR', status: 'AVAILABLE' },
+      { id: '3', hallId: 'hall1', row: 'A', column: 2, number: 3, seatNumber: 3, seatType: 'REGULAR', status: 'AVAILABLE' }
     ];
     
     const result = preventSingleGap(seats, '2');
@@ -129,8 +128,8 @@ describe('preventSingleGap', () => {
 
   it('allows booking at row boundary (no neighbor to isolate)', () => {
     const seats: Seat[] = [
-      { id: '1', hallId: 'hall1', row: 'A', column: 0, seatNumber: 1, seatType: 'REGULAR', status: 'BOOKED', linkedSeatId: null },
-      { id: '2', hallId: 'hall1', row: 'A', column: 1, seatNumber: 2, seatType: 'REGULAR', status: 'AVAILABLE', linkedSeatId: null }
+      { id: '1', hallId: 'hall1', row: 'A', column: 0, number: 1, seatNumber: 1, seatType: 'REGULAR', status: 'BOOKED' },
+      { id: '2', hallId: 'hall1', row: 'A', column: 1, number: 2, seatNumber: 2, seatType: 'REGULAR', status: 'AVAILABLE' }
     ];
     
     const result = preventSingleGap(seats, '2');
@@ -175,80 +174,24 @@ describe('row labeling', () => {
   });
 });
 
-describe('createLoveseatPair', () => {
-  it('creates loveseat pair when valid', () => {
-    const leftSeat: Seat = { id: '1', hallId: 'hall1', row: 'A', column: 0, seatNumber: 1, seatType: 'REGULAR', status: 'AVAILABLE', linkedSeatId: null };
-    const rightSeat: Seat = { id: '2', hallId: 'hall1', row: 'A', column: 1, seatNumber: 2, seatType: 'REGULAR', status: 'AVAILABLE', linkedSeatId: null };
-    const seats: Seat[] = [leftSeat, rightSeat];
-    
-    const result = createLoveseatPair(leftSeat, seats, 10);
-    expect(result).not.toBeNull();
-    expect(result!.left.seatType).toBe('LOVESEAT_LEFT');
-    expect(result!.left.linkedSeatId).toBe('2');
-    expect(result!.right.seatType).toBe('LOVESEAT_RIGHT');
-    expect(result!.right.linkedSeatId).toBe('1');
-  });
-
-  it('returns null at row boundary', () => {
-    const leftSeat: Seat = { id: '1', hallId: 'hall1', row: 'A', column: 9, seatNumber: 10, seatType: 'REGULAR', status: 'AVAILABLE', linkedSeatId: null };
-    const seats: Seat[] = [leftSeat];
-    
-    const result = createLoveseatPair(leftSeat, seats, 10);
-    expect(result).toBeNull();
-  });
-
-  it('returns null if right seat is inactive', () => {
-    const leftSeat: Seat = { id: '1', hallId: 'hall1', row: 'A', column: 0, seatNumber: 1, seatType: 'REGULAR', status: 'AVAILABLE', linkedSeatId: null };
-    const rightSeat: Seat = { id: '2', hallId: 'hall1', row: 'A', column: 1, seatNumber: null, seatType: 'REGULAR', status: 'INACTIVE', linkedSeatId: null };
-    const seats: Seat[] = [leftSeat, rightSeat];
-    
-    const result = createLoveseatPair(leftSeat, seats, 10);
-    expect(result).toBeNull();
-  });
-
-  it('returns null if right seat is already a loveseat', () => {
-    const leftSeat: Seat = { id: '1', hallId: 'hall1', row: 'A', column: 0, seatNumber: 1, seatType: 'REGULAR', status: 'AVAILABLE', linkedSeatId: null };
-    const rightSeat: Seat = { id: '2', hallId: 'hall1', row: 'A', column: 1, seatNumber: 2, seatType: 'LOVESEAT_LEFT', status: 'AVAILABLE', linkedSeatId: '3' };
-    const seats: Seat[] = [leftSeat, rightSeat];
-    
-    const result = createLoveseatPair(leftSeat, seats, 10);
-    expect(result).toBeNull();
-  });
-});
-
 describe('convertLoveseatToRegular', () => {
-  it('converts both seats to regular when deleting left', () => {
+  it('converts twinseat to regular when deleting one', () => {
     const seats: Seat[] = [
-      { id: '1', hallId: 'hall1', row: 'A', column: 0, seatNumber: 1, seatType: 'LOVESEAT_LEFT', status: 'AVAILABLE', linkedSeatId: '2' },
-      { id: '2', hallId: 'hall1', row: 'A', column: 1, seatNumber: 2, seatType: 'LOVESEAT_RIGHT', status: 'AVAILABLE', linkedSeatId: '1' }
+      { id: '1', hallId: 'hall1', row: 'A', column: 0, number: 1, seatNumber: 1, seatType: 'TWINSEAT', status: 'AVAILABLE' },
+      { id: '2', hallId: 'hall1', row: 'A', column: 1, number: 2, seatNumber: 2, seatType: 'TWINSEAT', status: 'AVAILABLE' }
     ];
     
     const result = convertLoveseatToRegular(seats[0], seats);
     expect(result[0].seatType).toBe('REGULAR');
-    expect(result[0].linkedSeatId).toBeNull();
     expect(result[1].seatType).toBe('REGULAR');
-    expect(result[1].linkedSeatId).toBeNull();
-  });
-
-  it('converts both seats to regular when deleting right', () => {
-    const seats: Seat[] = [
-      { id: '1', hallId: 'hall1', row: 'A', column: 0, seatNumber: 1, seatType: 'LOVESEAT_LEFT', status: 'AVAILABLE', linkedSeatId: '2' },
-      { id: '2', hallId: 'hall1', row: 'A', column: 1, seatNumber: 2, seatType: 'LOVESEAT_RIGHT', status: 'AVAILABLE', linkedSeatId: '1' }
-    ];
-    
-    const result = convertLoveseatToRegular(seats[1], seats);
-    expect(result[0].seatType).toBe('REGULAR');
-    expect(result[0].linkedSeatId).toBeNull();
-    expect(result[1].seatType).toBe('REGULAR');
-    expect(result[1].linkedSeatId).toBeNull();
   });
 });
 
 describe('validateSeatConfiguration', () => {
   it('passes validation for valid configuration', () => {
     const seats: Seat[] = [
-      { id: '1', hallId: 'hall1', row: 'A', column: 0, seatNumber: 1, seatType: 'REGULAR', status: 'AVAILABLE', linkedSeatId: null },
-      { id: '2', hallId: 'hall1', row: 'A', column: 1, seatNumber: 2, seatType: 'REGULAR', status: 'AVAILABLE', linkedSeatId: null }
+      { id: '1', hallId: 'hall1', row: 'A', column: 0, number: 1, seatNumber: 1, seatType: 'REGULAR', status: 'AVAILABLE' },
+      { id: '2', hallId: 'hall1', row: 'A', column: 1, number: 2, seatNumber: 2, seatType: 'REGULAR', status: 'AVAILABLE' }
     ];
     
     const result = validateSeatConfiguration(seats, 10, 10);
@@ -259,9 +202,9 @@ describe('validateSeatConfiguration', () => {
 
   it('fails when capacity is exceeded', () => {
     const seats: Seat[] = [
-      { id: '1', hallId: 'hall1', row: 'A', column: 0, seatNumber: 1, seatType: 'REGULAR', status: 'AVAILABLE', linkedSeatId: null },
-      { id: '2', hallId: 'hall1', row: 'A', column: 1, seatNumber: 2, seatType: 'REGULAR', status: 'AVAILABLE', linkedSeatId: null },
-      { id: '3', hallId: 'hall1', row: 'A', column: 2, seatNumber: 3, seatType: 'REGULAR', status: 'AVAILABLE', linkedSeatId: null }
+      { id: '1', hallId: 'hall1', row: 'A', column: 0, number: 1, seatNumber: 1, seatType: 'REGULAR', status: 'AVAILABLE' },
+      { id: '2', hallId: 'hall1', row: 'A', column: 1, number: 2, seatNumber: 2, seatType: 'REGULAR', status: 'AVAILABLE' },
+      { id: '3', hallId: 'hall1', row: 'A', column: 2, number: 3, seatNumber: 3, seatType: 'REGULAR', status: 'AVAILABLE' }
     ];
     
     const result = validateSeatConfiguration(seats, 2, 10);
@@ -269,36 +212,25 @@ describe('validateSeatConfiguration', () => {
     expect(result.errors.some(e => e.type === 'CAPACITY_EXCEEDED')).toBe(true);
   });
 
-  it('detects orphaned loveseats', () => {
+  it('detects orphaned twinseats', () => {
     const seats: Seat[] = [
-      { id: '1', hallId: 'hall1', row: 'A', column: 0, seatNumber: 1, seatType: 'LOVESEAT_LEFT', status: 'AVAILABLE', linkedSeatId: '999' },
-      { id: '2', hallId: 'hall1', row: 'A', column: 1, seatNumber: 2, seatType: 'REGULAR', status: 'AVAILABLE', linkedSeatId: null }
+      { id: '1', hallId: 'hall1', row: 'A', column: 0, number: 1, seatNumber: 1, seatType: 'TWINSEAT', status: 'AVAILABLE' },
+      { id: '2', hallId: 'hall1', row: 'A', column: 1, number: 2, seatNumber: 2, seatType: 'REGULAR', status: 'AVAILABLE' }
     ];
     
     const result = validateSeatConfiguration(seats, 10, 10);
     expect(result.isValid).toBe(false);
-    expect(result.errors.some(e => e.type === 'ORPHANED_LOVESEAT')).toBe(true);
-  });
-
-  it('detects loveseat at row boundary', () => {
-    const seats: Seat[] = [
-      { id: '1', hallId: 'hall1', row: 'A', column: 9, seatNumber: 10, seatType: 'LOVESEAT_LEFT', status: 'AVAILABLE', linkedSeatId: '2' },
-      { id: '2', hallId: 'hall1', row: 'A', column: 10, seatNumber: 11, seatType: 'LOVESEAT_RIGHT', status: 'AVAILABLE', linkedSeatId: '1' }
-    ];
-    
-    const result = validateSeatConfiguration(seats, 10, 10);
-    expect(result.isValid).toBe(false);
-    expect(result.errors.some(e => e.type === 'INVALID_LOVESEAT_PLACEMENT')).toBe(true);
+    expect(result.errors.some(e => e.type === 'ORPHANED_TWINSEAT')).toBe(true);
   });
 });
 
 describe('assignSeatNumbers', () => {
   it('assigns sequential numbers, skipping inactive', () => {
     const seats: Seat[] = [
-      { id: '1', hallId: 'hall1', row: 'A', column: 0, seatNumber: null, seatType: 'REGULAR', status: 'AVAILABLE', linkedSeatId: null },
-      { id: '2', hallId: 'hall1', row: 'A', column: 1, seatNumber: null, seatType: 'REGULAR', status: 'AVAILABLE', linkedSeatId: null },
-      { id: '3', hallId: 'hall1', row: 'A', column: 2, seatNumber: null, seatType: 'REGULAR', status: 'INACTIVE', linkedSeatId: null },
-      { id: '4', hallId: 'hall1', row: 'A', column: 3, seatNumber: null, seatType: 'REGULAR', status: 'AVAILABLE', linkedSeatId: null }
+      { id: '1', hallId: 'hall1', row: 'A', column: 0, number: 1, seatNumber: null, seatType: 'REGULAR', status: 'AVAILABLE' },
+      { id: '2', hallId: 'hall1', row: 'A', column: 1, number: 2, seatNumber: null, seatType: 'REGULAR', status: 'AVAILABLE' },
+      { id: '3', hallId: 'hall1', row: 'A', column: 2, number: 0, seatNumber: null, seatType: 'REGULAR', status: 'INACTIVE' },
+      { id: '4', hallId: 'hall1', row: 'A', column: 3, number: 3, seatNumber: null, seatType: 'REGULAR', status: 'AVAILABLE' }
     ];
     
     const result = assignSeatNumbers(seats);
@@ -310,8 +242,8 @@ describe('assignSeatNumbers', () => {
 
   it('handles multiple rows', () => {
     const seats: Seat[] = [
-      { id: '1', hallId: 'hall1', row: 'A', column: 0, seatNumber: null, seatType: 'REGULAR', status: 'AVAILABLE', linkedSeatId: null },
-      { id: '2', hallId: 'hall1', row: 'B', column: 0, seatNumber: null, seatType: 'REGULAR', status: 'AVAILABLE', linkedSeatId: null }
+      { id: '1', hallId: 'hall1', row: 'A', column: 0, number: 1, seatNumber: null, seatType: 'REGULAR', status: 'AVAILABLE' },
+      { id: '2', hallId: 'hall1', row: 'B', column: 0, number: 1, seatNumber: null, seatType: 'REGULAR', status: 'AVAILABLE' }
     ];
     
     const result = assignSeatNumbers(seats);
@@ -361,32 +293,20 @@ describe('generateOptimalGrid', () => {
 
 describe('getSeatDisplayLabel', () => {
   it('shows coordinates in admin mode', () => {
-    const seat: Seat = { id: '1', hallId: 'hall1', row: 'A', column: 5, seatNumber: 6, seatType: 'REGULAR', status: 'AVAILABLE', linkedSeatId: null };
+    const seat: Seat = { id: '1', hallId: 'hall1', row: 'A', column: 5, number: 6, seatNumber: 6, seatType: 'REGULAR', status: 'AVAILABLE' };
     
     expect(getSeatDisplayLabel(seat, 'admin')).toBe('A-5');
   });
 
   it('shows seat number in preview mode', () => {
-    const seat: Seat = { id: '1', hallId: 'hall1', row: 'A', column: 5, seatNumber: 6, seatType: 'REGULAR', status: 'AVAILABLE', linkedSeatId: null };
+    const seat: Seat = { id: '1', hallId: 'hall1', row: 'A', column: 5, number: 6, seatNumber: 6, seatType: 'REGULAR', status: 'AVAILABLE' };
     
     expect(getSeatDisplayLabel(seat, 'preview')).toBe('A6');
   });
 
-  it('shows loveseat range in preview mode', () => {
-    const seat: Seat = { id: '1', hallId: 'hall1', row: 'A', column: 5, seatNumber: 6, seatType: 'LOVESEAT_LEFT', status: 'AVAILABLE', linkedSeatId: '2' };
-    
-    expect(getSeatDisplayLabel(seat, 'preview')).toBe('A6-7');
-  });
-
   it('shows dash for inactive seats', () => {
-    const seat: Seat = { id: '1', hallId: 'hall1', row: 'A', column: 5, seatNumber: null, seatType: 'REGULAR', status: 'INACTIVE', linkedSeatId: null };
+    const seat: Seat = { id: '1', hallId: 'hall1', row: 'A', column: 5, number: 0, seatNumber: null, seatType: 'REGULAR', status: 'INACTIVE' };
     
     expect(getSeatDisplayLabel(seat, 'preview')).toBe('-');
-  });
-
-  it('returns empty string for loveseat right (hidden)', () => {
-    const seat: Seat = { id: '2', hallId: 'hall1', row: 'A', column: 6, seatNumber: 7, seatType: 'LOVESEAT_RIGHT', status: 'AVAILABLE', linkedSeatId: '1' };
-    
-    expect(getSeatDisplayLabel(seat, 'preview')).toBe('');
   });
 });

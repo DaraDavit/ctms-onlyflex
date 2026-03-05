@@ -3,7 +3,7 @@ import { Seat, SeatType, SeatStatus, CapacityBreakdown, ValidationResult, Valida
 /**
  * Calculate capacity breakdown from seats
  * - REGULAR/VIP = 1 unit each
- * - LOVESEAT_LEFT = 2 units (RIGHT doesn't count separately)
+ * - TWINSEAT = 2 units
  * - INACTIVE = 0 units
  */
 export function calculateTotalCapacity(seats: Seat[]): CapacityBreakdown {
@@ -24,22 +24,19 @@ export function calculateTotalCapacity(seats: Seat[]): CapacityBreakdown {
         acc.totalActive++;
         acc.capacityUsed++;
         break;
-      case 'LOVESEAT_LEFT':
-        acc.loveseats++;
-        acc.loveseatUnits += 2;
+      case 'TWINSEAT':
+        acc.twinseats++;
+        acc.twinseatUnits += 2;
         acc.totalActive++;
         acc.capacityUsed += 2;
-        break;
-      case 'LOVESEAT_RIGHT':
-        // Don't count - it's included with LEFT
         break;
     }
     return acc;
   }, {
     regular: 0,
     vip: 0,
-    loveseats: 0,
-    loveseatUnits: 0,
+    twinseats: 0,
+    twinseatUnits: 0,
     inactive: 0,
     totalActive: 0,
     capacityUsed: 0
@@ -133,10 +130,10 @@ export function rowToIndex(label: string): number {
 }
 
 /**
- * Create a loveseat pair
- * Returns null if placement is invalid
+ * Create a twinseat
+ * Simplified - no linked IDs
  */
-export function createLoveseatPair(
+export function createTwinseat(
   leftSeat: Seat,
   seats: Seat[],
   columns: number
@@ -155,32 +152,30 @@ export function createLoveseatPair(
   }
   
   // Check if right seat is available for conversion
-  if (rightSeat.status === 'INACTIVE' || rightSeat.seatType.startsWith('LOVESEAT')) {
+  if (rightSeat.status === 'INACTIVE') {
     return null;
   }
   
   return {
-    left: { ...leftSeat, seatType: 'LOVESEAT_LEFT', linkedSeatId: rightSeat.id },
-    right: { ...rightSeat, seatType: 'LOVESEAT_RIGHT', linkedSeatId: leftSeat.id }
+    left: { ...leftSeat, seatType: 'TWINSEAT' },
+    right: { ...rightSeat, seatType: 'TWINSEAT' }
   };
 }
 
 /**
- * Convert loveseat back to regular seats
+ * Convert twinseat back to regular seats
  * When deleting/changing one half, convert BOTH to REGULAR
  */
 export function convertLoveseatToRegular(
   seat: Seat,
   seats: Seat[]
 ): Seat[] {
-  const linkedId = seat.linkedSeatId;
-  
   return seats.map(s => {
     if (s.id === seat.id) {
-      return { ...s, seatType: 'REGULAR', linkedSeatId: null };
+      return { ...s, seatType: 'REGULAR' };
     }
-    if (linkedId && s.id === linkedId) {
-      return { ...s, seatType: 'REGULAR', linkedSeatId: null };
+    if (s.row === seat.row && s.column === seat.column + 1 && s.seatType === 'TWINSEAT') {
+      return { ...s, seatType: 'REGULAR' };
     }
     return s;
   });
@@ -207,34 +202,19 @@ export function validateSeatConfiguration(
     });
   }
   
-  // Check 2: Orphaned loveseats
-  const loveseats = seats.filter(s => 
-    s.seatType === 'LOVESEAT_LEFT' || s.seatType === 'LOVESEAT_RIGHT'
-  );
-  
-  loveseats.forEach(seat => {
-    const linked = seats.find(s => s.id === seat.linkedSeatId);
-    if (!linked || linked.linkedSeatId !== seat.id) {
-      errors.push({
-        type: 'ORPHANED_LOVESEAT',
-        seatId: seat.id,
-        row: seat.row,
-        column: seat.column,
-        message: `Orphaned loveseat at ${seat.row}-${seat.column}`
-      });
-    }
-  });
-  
-  // Check 3: Invalid loveseat placement (at row boundary)
-  const leftLoveseats = seats.filter(s => s.seatType === 'LOVESEAT_LEFT');
-  leftLoveseats.forEach(seat => {
+  // Check 2: TWINSEAT validation (simplified - no linked IDs)
+  // Skip this check since TWINSEAT doesn't use linked IDs
+
+  // Check 3: Invalid twinseat placement (at row boundary)
+  const twinseats = seats.filter(s => s.seatType === 'TWINSEAT');
+  twinseats.forEach(seat => {
     if (seat.column >= columns - 1) {
       errors.push({
-        type: 'INVALID_LOVESEAT_PLACEMENT',
+        type: 'INVALID_TWINSEAT_PLACEMENT',
         seatId: seat.id,
         row: seat.row,
         column: seat.column,
-        message: `Loveseat at row boundary: ${seat.row}-${seat.column}. Must have adjacent seat.`
+        message: `Twinseat at row boundary: ${seat.row}-${seat.column}. Must have adjacent seat.`
       });
     }
   });
@@ -259,8 +239,7 @@ function findExcessRows(seats: Seat[], capacity: number): string[] {
   for (const row of rows) {
     const rowSeats = seats.filter(s => s.row === row && s.status !== 'INACTIVE');
     const rowCapacity = rowSeats.reduce((total, seat) => {
-      if (seat.seatType === 'LOVESEAT_LEFT') return total + 2;
-      if (seat.seatType === 'LOVESEAT_RIGHT') return total;
+      if (seat.seatType === 'TWINSEAT') return total + 2;
       return total + 1;
     }, 0);
     
@@ -296,9 +275,9 @@ export function assignSeatNumbers(seats: Seat[]): Seat[] {
     
     rowSeats.forEach(seat => {
       if (seat.status === 'INACTIVE') {
-        result.push({ ...seat, seatNumber: null });
+        result.push({ ...seat, number: 0, seatNumber: null });
       } else {
-        result.push({ ...seat, seatNumber });
+        result.push({ ...seat, number: seatNumber, seatNumber: seatNumber });
         seatNumber++;
       }
     });
@@ -333,10 +312,10 @@ export function generateOptimalGrid(
         hallId,
         row,
         column: col,
+        number: isExcess ? 0 : col + 1,
         seatNumber: isExcess ? null : col + 1,
         seatType: 'REGULAR',
-        status: isExcess ? 'INACTIVE' : 'AVAILABLE',
-        linkedSeatId: null
+        status: isExcess ? 'INACTIVE' : 'AVAILABLE'
       });
     }
   }
@@ -380,10 +359,10 @@ export function importConfiguration(
     hallId,
     row: s.row,
     column: s.column,
+    number: s.status === 'INACTIVE' ? 0 : 0, // Will be recalculated
     seatNumber: s.status === 'INACTIVE' ? null : 0, // Will be recalculated
     seatType: s.seatType,
-    status: s.status,
-    linkedSeatId: null
+    status: s.status
   }));
 }
 
@@ -405,11 +384,11 @@ export function getSeatDisplayLabel(
     return '-';
   }
   
-  if (seat.seatType === 'LOVESEAT_LEFT' && seat.seatNumber) {
+  if (seat.seatType === 'TWINSEAT' && seat.seatNumber) {
     return `${seat.row}${seat.seatNumber}-${seat.seatNumber + 1}`;
   }
   
-  if (seat.seatType === 'LOVESEAT_RIGHT') {
+  if (seat.seatType === 'TWINSEAT') {
     return ''; // Hidden, shown as part of left
   }
   

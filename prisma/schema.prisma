@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client"
   output   = "../app/generated/prisma"
@@ -13,123 +7,105 @@ datasource db {
   provider = "postgresql"
 }
 
-// ============== USER WITH MEMBERSHIP ==============
-
 model User {
-  id              String   @id @default(cuid())
-  email           String   @unique
-  emailVerified   DateTime? @map("email_verified")
-  name            String?
-  password        String?  // Hashed - optional for OAuth users
-  image           String?
-  phone           String?
-  role            Role     @default(USER)
-  
-  // Membership
-  membershipTier  MembershipTier @default(NONE)  // NONE = no discount, MEMBER = 30% off
-  
-  // Relations
-  accounts        Account[]
-  sessions        Session[]
-  reviews         Review[]
-  watchlist       Watchlist[]
-  bookings        Booking[]
-  adminAuditLogs  AdminAuditLog[]
-  
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
-  
+  id             String          @id @default(cuid())
+  email          String          @unique
+  emailVerified  DateTime?       @map("email_verified")
+  name           String?
+  password       String?
+  image          String?
+  phone          String?
+  role           Role            @default(USER)
+  membershipTier MembershipTier  @default(NONE)
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+  bookings       Booking[]
+  reviews        Review[]
+  watchlist      Watchlist[]
+  accounts       Account[]
+  adminAuditLogs AdminAuditLog[]
+  sessions       Session[]
+
   @@map("users")
 }
-
-// ============== ADMIN AUDIT LOGGING ==============
 
 model AdminAuditLog {
   id        String   @id @default(uuid())
   userId    String
-  action    String   // LOGIN, LOGOUT, CREATE, UPDATE, DELETE, etc.
-  details   String?  // Additional details about the action
+  action    String
+  details   String?
   timestamp DateTime @default(now())
-  ipAddress String?  // IP address for security tracking
-  userAgent String?  // Browser/user agent info
-  
+  ipAddress String?
+  userAgent String?
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
   @@index([userId])
   @@index([timestamp])
   @@map("admin_audit_logs")
 }
 
-// ============== CORE ENTITIES ==============
-
 model Movie {
-  id          String    @id @default(uuid())
+  id          String       @id @default(uuid())
   title       String
-  slug        String    @unique
-  description String?   @db.Text
+  slug        String       @unique
+  description String?
   releaseDate DateTime?
-  duration    Int?      // in minutes
-  rating      Decimal?  @db.Decimal(2, 1) // 0.0 - 10.0
+  duration    Int?
+  rating      Decimal?     @db.Decimal(2, 1)
   posterUrl   String?
   backdropUrl String?
-  language    String    @default("en")
-  status      MovieStatus @default(RELEASED)
-  
-  // Relations
-  genres      Genre[]
+  language    String       @default("en")
+  status      MovieStatus  @default(RELEASED)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
   cast        CastMember[]
   reviews     Review[]
+  showtimes   Showtime[]
   watchlists  Watchlist[]
-  showtimes   Showtime[]  // When this movie is scheduled
-  
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  genres      Genre[]      @relation("GenreToMovie")
 }
 
 model Genre {
   id     String  @id @default(uuid())
   name   String  @unique
   slug   String  @unique
-  movies Movie[]
+  movies Movie[] @relation("GenreToMovie")
 }
 
 model Person {
-  id          String   @id @default(uuid())
+  id          String       @id @default(uuid())
   name        String
-  slug        String   @unique
+  slug        String       @unique
   birthDate   DateTime?
   photoUrl    String?
-  biography   String?  @db.Text
+  biography   String?
   nationality String?
   cast        CastMember[]
 }
 
 model CastMember {
-  id            String    @id @default(uuid())
+  id            String   @id @default(uuid())
   movieId       String
   personId      String
   role          CastRole
-  characterName String?   // Only for actors
-  
-  movie         Movie     @relation(fields: [movieId], references: [id], onDelete: Cascade)
-  person        Person    @relation(fields: [personId], references: [id], onDelete: Cascade)
-  
+  characterName String?
+  movie         Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  person        Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+
   @@unique([movieId, personId, role, characterName])
 }
 
 model Review {
   id        String   @id @default(uuid())
-  rating    Int      // 1-10
-  content   String?  @db.Text
+  rating    Int
+  content   String?
   movieId   String
   userId    String
-  
-  movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+  movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([movieId, userId])
 }
 
@@ -138,148 +114,155 @@ model Watchlist {
   userId    String
   movieId   String
   watched   Boolean  @default(false)
-  
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
-  
   createdAt DateTime @default(now())
-  
+  movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([userId, movieId])
 }
 
-// ============== CINEMA & SHOWTIMES ==============
-
 model Hall {
-  id          String   @id @default(uuid())
-  name        String   // "Hall 1", "IMAX 1", "VIP Room"
+  id          String     @id @default(uuid())
+  name        String
   capacity    Int
-  hallType    HallType @default(STANDARD)
-  columns     Int      @default(10)      // Number of columns in the grid
-  isActive    Boolean  @default(true)
-  isPublished Boolean  @default(false)   // Locks configuration when true
-  publishedAt DateTime?                   // When the hall was published
-  version     Int      @default(1)       // For optimistic locking
-  
-  // Relations
-  showtimes   Showtime[]
+  hallType    HallType   @default(STANDARD)
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  rows        Int        @default(8)
+  columns     Int        @default(10)
+  isPublished Boolean    @default(false)
+  publishedAt DateTime?
+  version     Int        @default(1)
+  rowConfigs  Json?      @map("row_configs")
+  updatedAt   DateTime   @default(now()) @updatedAt
   seats       Seat[]
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  showtimes   Showtime[]
 }
 
 model Showtime {
-  id                String   @id @default(uuid())
+  id                String         @id @default(uuid())
   movieId           String
   hallId            String
   startTime         DateTime
   endTime           DateTime
-  basePrice         Decimal  @db.Decimal(10, 2)
-  
-  // Weekend Pricing
-  isWeekend         Boolean  @default(false)  // Auto-calculated from startTime
-  weekendMultiplier Decimal  @default(1.3)    // 30% increase on weekends
-  
+  basePrice         Decimal        @db.Decimal(10, 2)
+  isWeekend         Boolean        @default(false)
+  weekendMultiplier Decimal        @default(1.3)
   status            ShowtimeStatus @default(ACTIVE)
-  
-  // Relations
-  movie             Movie    @relation(fields: [movieId], references: [id])
-  hall              Hall     @relation(fields: [hallId], references: [id])
+  createdAt         DateTime       @default(now())
   bookings          Booking[]
+  hall              Hall           @relation(fields: [hallId], references: [id])
+  movie             Movie          @relation(fields: [movieId], references: [id])
   tickets           Ticket[]
-  
-  createdAt         DateTime @default(now())
-  
+
   @@index([startTime])
   @@index([movieId])
 }
 
-// ============== SEATING & BOOKING ==============
-
 model Seat {
-  id            String      @id @default(uuid())
-  hallId        String
-  row           String      // "A", "B", "AA" - row label
-  column        Int         // 0-based grid coordinate
-  seatNumber    Int?        // Display number (null if inactive)
-  seatType      SeatType    @default(REGULAR)
-  status        SeatStatus  @default(AVAILABLE)
-  linkedSeatId  String?     // Links LOVESEAT_LEFT ↔ LOVESEAT_RIGHT
-  
-  // Relations
-  hall          Hall        @relation(fields: [hallId], references: [id])
-  tickets       Ticket[]
-  
+  id           String     @id @default(uuid())
+  hallId       String
+  row          String
+  number       Int
+  seatType     SeatType   @default(REGULAR)
+  isActive     Boolean    @default(true)
+  column       Int        @default(0)
+  seatNumber   Int?
+  status       SeatStatus @default(AVAILABLE)
+  hall         Hall       @relation(fields: [hallId], references: [id])
+  tickets      Ticket[]
+
   @@unique([hallId, row, column])
+  @@unique([hallId, row, number])
   @@index([hallId, status])
-  @@index([linkedSeatId])
 }
 
 model Booking {
-  id              String   @id @default(uuid())
-  userId          String
-  showtimeId      String
-  
-  // Pricing Summary
-  subtotal        Decimal  @db.Decimal(10, 2)  // Sum of all ticket originalPrice
-  totalDiscount   Decimal  @db.Decimal(10, 2)  // Sum of all discounts
-  finalAmount     Decimal  @db.Decimal(10, 2)  // subtotal - totalDiscount
-  
-  bookingStatus   BookingStatus @default(PENDING)
-  
-  // Relations
-  user            User     @relation(fields: [userId], references: [id])
-  showtime        Showtime @relation(fields: [showtimeId], references: [id])
-  tickets         Ticket[]
-  payment         Payment?
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  id            String        @id @default(uuid())
+  userId        String
+  showtimeId    String
+  subtotal      Decimal       @db.Decimal(10, 2)
+  totalDiscount Decimal       @db.Decimal(10, 2)
+  finalAmount   Decimal       @db.Decimal(10, 2)
+  bookingStatus BookingStatus @default(PENDING)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  showtime      Showtime      @relation(fields: [showtimeId], references: [id])
+  user          User          @relation(fields: [userId], references: [id])
+  payment       Payment?
+  tickets       Ticket[]
+
   @@index([userId])
 }
 
 model Ticket {
-  id              String   @id @default(uuid())
-  bookingId       String
-  showtimeId      String
-  seatId          String
-  ticketType      TicketType @default(ADULT)
-  
-  // Pricing (calculated at booking time)
-  originalPrice   Decimal  @db.Decimal(10, 2)  // basePrice * weekendMultiplier
-  discountAmount  Decimal  @db.Decimal(10, 2)  // 30% if user is member
-  finalPrice      Decimal  @db.Decimal(10, 2)  // originalPrice - discountAmount
-  
-  status          TicketStatus @default(RESERVED)
-  
-  // Relations
-  booking         Booking  @relation(fields: [bookingId], references: [id])
-  showtime        Showtime @relation(fields: [showtimeId], references: [id])
-  seat            Seat     @relation(fields: [seatId], references: [id])
-  
-  createdAt       DateTime @default(now())
-  
+  id             String       @id @default(uuid())
+  bookingId      String
+  showtimeId     String
+  seatId         String
+  ticketType     TicketType   @default(ADULT)
+  originalPrice  Decimal      @db.Decimal(10, 2)
+  discountAmount Decimal      @db.Decimal(10, 2)
+  finalPrice     Decimal      @db.Decimal(10, 2)
+  status         TicketStatus @default(RESERVED)
+  createdAt      DateTime     @default(now())
+  booking        Booking      @relation(fields: [bookingId], references: [id])
+  seat           Seat         @relation(fields: [seatId], references: [id])
+  showtime       Showtime     @relation(fields: [showtimeId], references: [id])
+
   @@unique([showtimeId, seatId])
 }
 
 model Payment {
-  id            String   @id @default(uuid())
-  bookingId     String   @unique
-  amount        Decimal  @db.Decimal(10, 2)
+  id            String        @id @default(uuid())
+  bookingId     String        @unique
+  amount        Decimal       @db.Decimal(10, 2)
   paymentMethod PaymentMethod
   status        PaymentStatus @default(PENDING)
   transactionId String?
   paidAt        DateTime?
-  
-  // Relations
-  booking       Booking  @relation(fields: [bookingId], references: [id])
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  booking       Booking       @relation(fields: [bookingId], references: [id])
 }
 
-// ============== ENUMS ==============
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verificationtokens")
+}
 
 enum Role {
   USER
@@ -288,8 +271,8 @@ enum Role {
 }
 
 enum MembershipTier {
-  NONE      // 0% discount
-  MEMBER    // 30% discount
+  NONE
+  MEMBER
 }
 
 enum MovieStatus {
@@ -300,6 +283,7 @@ enum MovieStatus {
 }
 
 enum HallType {
+  Regular
   STANDARD
   VIP
 }
@@ -321,8 +305,7 @@ enum CastRole {
 enum SeatType {
   REGULAR
   VIP
-  LOVESEAT_LEFT
-  LOVESEAT_RIGHT
+  TWINSEAT
 }
 
 enum SeatStatus {
@@ -367,45 +350,4 @@ enum PaymentStatus {
   COMPLETED
   FAILED
   REFUNDED
-}
-
-// ============== AUTH.JS MODELS ==============
-
-model Account {
-  id                String  @id @default(cuid())
-  userId            String  @map("user_id")
-  type              String
-  provider          String
-  providerAccountId String  @map("provider_account_id")
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String? @db.Text
-  session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-  @@map("accounts")
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique @map("session_token")
-  userId       String   @map("user_id")
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("sessions")
-}
-
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
-  @@map("verificationtokens")
 }

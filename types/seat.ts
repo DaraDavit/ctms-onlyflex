@@ -1,4 +1,4 @@
-export type SeatType = 'REGULAR' | 'VIP' | 'LOVESEAT_LEFT' | 'LOVESEAT_RIGHT';
+export type SeatType = 'REGULAR' | 'VIP' | 'TWINSEAT';
 
 export type SeatStatus = 'AVAILABLE' | 'SELECTED' | 'BOOKED' | 'RESERVED' | 'INACTIVE' | 'BLOCKED';
 
@@ -7,24 +7,24 @@ export interface Seat {
   hallId: string;
   row: string;
   column: number;
+  number: number;
   seatNumber: number | null;
   seatType: SeatType;
   status: SeatStatus;
-  linkedSeatId: string | null;
 }
 
 export interface CapacityBreakdown {
   regular: number;
   vip: number;
-  loveseats: number;
-  loveseatUnits: number;
+  twinseats: number;
+  twinseatUnits: number;
   inactive: number;
   totalActive: number;
   capacityUsed: number;
 }
 
 export interface ValidationError {
-  type: 'CAPACITY_EXCEEDED' | 'ORPHANED_LOVESEAT' | 'BOUNDARY_VIOLATION' | 'INVALID_LOVESEAT_PLACEMENT';
+  type: 'CAPACITY_EXCEEDED' | 'ORPHANED_TWINSEAT' | 'BOUNDARY_VIOLATION' | 'INVALID_TWINSEAT_PLACEMENT';
   seatId?: string;
   row?: string;
   column?: number;

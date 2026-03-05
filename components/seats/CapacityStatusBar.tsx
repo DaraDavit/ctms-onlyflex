@@ -152,7 +152,7 @@ export function CapacityStatusBar({
               </div>
               <div className="flex items-center gap-1.5">
                 <div className="w-2 h-2 rounded-full bg-pink-500" />
-                <span className="text-slate-400">{breakdown.loveseats}×2</span>
+                <span className="text-slate-400">{breakdown.twinseats}×2</span>
               </div>
             </div>
 

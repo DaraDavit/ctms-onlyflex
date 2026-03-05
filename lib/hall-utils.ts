@@ -38,11 +38,14 @@ export function generateSeatsFromRowConfigs(
 
     for (let col = 0; col < columns; col++) {
       seats.push({
+        id: crypto.randomUUID(),
         hallId,
         row: rowLabel,
         column: col,
+        number: col + 1,
         seatNumber: col + 1,
-        seatType: seatType as SeatType,
+        seatType: seatType as "REGULAR" | "VIP" | "TWINSEAT",
+        isActive: true,
         status: "AVAILABLE",
       });
     }
@@ -105,8 +108,7 @@ export function validateRowConfigs(
 export const seatTypeOptions = [
   { value: "REGULAR", label: "Regular" },
   { value: "VIP", label: "VIP" },
-  { value: "LOVESEAT_LEFT", label: "Loveseat (Left)" },
-  { value: "LOVESEAT_RIGHT", label: "Loveseat (Right)" },
+  { value: "TWINSEAT", label: "Twinseat" },
 ];
 
 export const hallTypeOptions = [

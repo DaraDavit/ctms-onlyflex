@@ -89,10 +89,10 @@ async function migrate() {
         hallId: string;
         row: string;
         column: number;
+        number: number;
         seatNumber: number | null;
-        seatType: 'REGULAR' | 'VIP' | 'LOVESEAT_LEFT' | 'LOVESEAT_RIGHT';
+        seatType: 'REGULAR' | 'VIP' | 'TWINSEAT';
         status: 'AVAILABLE' | 'SELECTED' | 'BOOKED' | 'RESERVED' | 'INACTIVE' | 'BLOCKED';
-        linkedSeatId: string | null;
       }> = [];
 
       for (let rowIdx = 0; rowIdx < rows; rowIdx++) {
@@ -107,10 +107,10 @@ async function migrate() {
             hallId: hall.id,
             row,
             column: col,
+            number: isExcess ? 0 : col + 1,
             seatNumber: isExcess ? null : col + 1,
             seatType: 'REGULAR',
-            status: isExcess ? 'INACTIVE' : 'AVAILABLE',
-            linkedSeatId: null
+            status: isExcess ? 'INACTIVE' : 'AVAILABLE'
           });
         }
       }

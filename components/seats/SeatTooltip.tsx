@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { Seat } from '@/types/seat';
 
 interface SeatTooltipProps {
@@ -17,8 +16,7 @@ export function SeatTooltip({ seat, viewMode, position, visible }: SeatTooltipPr
     switch (seat.seatType) {
       case 'REGULAR': return 'Regular Seat';
       case 'VIP': return 'VIP Seat';
-      case 'LOVESEAT_LEFT': return 'Loveseat (Left)';
-      case 'LOVESEAT_RIGHT': return 'Loveseat (Right)';
+      case 'TWINSEAT': return 'Twinseat';
       default: return 'Seat';
     }
   };
@@ -55,31 +53,29 @@ export function SeatTooltip({ seat, viewMode, position, visible }: SeatTooltipPr
         top: position.y - 60,
       }}
     >
-      <div className="bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl border border-slate-700 backdrop-blur-sm bg-opacity-95 min-w-[180px]">
+      <div className="bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl border border-slate-700 backdrop-blur-sm bg-opacity-95 min-w-45">
         <div className="flex items-center gap-2 mb-1">
           <span className="text-lg font-bold">
             {viewMode === 'admin' 
               ? `${seat.row}-${seat.column}`
               : seat.seatNumber 
-                ? `${seat.row}${seat.seatNumber}${seat.seatType === 'LOVESEAT_LEFT' ? `-${seat.seatNumber + 1}` : ''}`
+                ? `${seat.row}${seat.seatNumber}${seat.seatType === 'TWINSEAT' ? `-${seat.seatNumber + 1}` : ''}`
                 : 'Inactive'
             }
           </span>
-          {seat.seatType === 'VIP' && <span className="text-yellow-400">👑</span>}
-          {seat.seatType === 'LOVESEAT_LEFT' && <span className="text-pink-400">💕</span>}
         </div>
         <div className="text-sm text-slate-300">{getSeatTypeLabel()}</div>
         <div className={`text-sm font-semibold ${getStatusColor()} mt-1`}>
           {getStatusLabel()}
         </div>
-        {seat.seatType === 'LOVESEAT_LEFT' && (
+        {seat.seatType === 'TWINSEAT' && (
           <div className="text-xs text-pink-400 mt-1">
             Occupies 2 seats
           </div>
         )}
       </div>
       {/* Arrow */}
-      <div className="absolute left-1/2 -translate-x-1/2 -bottom-2 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[8px] border-t-slate-900" />
+      <div className="absolute left-1/2 -translate-x-1/2 -bottom-2 w-0 h-0 border-l-8 border-l-transparent border-r-8 border-r-transparent border-t-8 border-t-slate-900" />
     </div>
   );
 }
