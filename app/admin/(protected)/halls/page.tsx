@@ -300,15 +300,7 @@ export default function AdminHallsPage() {
               {halls.length} {halls.length === 1 ? "hall" : "halls"} configured
             </p>
           </div>
-          {/* Live Indicator */}
-          <div className="flex items-center gap-2 text-sm">
-            <span className={`w-2 h-2 rounded-full ${isPolling ? "bg-green-500" : "bg-gray-300"} ${!isFormOpen && "animate-pulse"}`} />
-            <span className="text-gray-500">
-              {isFormOpen ? "Paused" : "Live"}
-              {lastUpdated && !isFormOpen && ` • ${getLastUpdatedText()}`}
-            </span>
-          </div>
-        </div>
+       </div>
         <button
           onClick={() => setIsFormOpen(true)}
           className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors shadow-sm"
