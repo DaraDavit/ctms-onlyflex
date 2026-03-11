@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, hallType, rows, columns, isActive, rowConfigs } = body;
+    const { name, hallType, screenType, rows, columns, isActive, rowConfigs } = body;
 
     // Validation
     if (!name || !name.trim()) {
@@ -129,6 +129,7 @@ export async function POST(request: NextRequest) {
         data: {
           name: name.trim(),
           hallType: hallType || "STANDARD",
+          screenType: screenType || "STANDARD_2D",
           capacity,
           rows,
           columns,

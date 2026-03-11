@@ -12,6 +12,7 @@ interface Hall {
   id: string;
   name: string;
   hallType: string;
+  screenType: string;
   capacity: number;
   rows: number;
   columns: number;
@@ -35,6 +36,7 @@ interface Hall {
 interface HallFormData {
   name: string;
   hallType: string;
+  screenType: string;
   rows: number;
   columns: number;
   isActive: boolean;
@@ -295,7 +297,7 @@ export default function AdminHallsPage() {
       <div className="flex items-center justify-between px-6 py-4 border-b bg-white">
         <div className="flex items-center gap-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Hall Management</h1>
+            <h1 className="text-2xl font-bold text-black">Hall Management</h1>
             <p className="text-sm text-gray-500 mt-0.5">
               {halls.length} {halls.length === 1 ? "hall" : "halls"} configured
             </p>

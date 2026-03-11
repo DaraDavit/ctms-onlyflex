@@ -71,7 +71,7 @@ export async function PUT(
 
     const { id } = await params;
     const body = await request.json();
-    const { name, hallType, capacity, isActive, rows, columns, rowConfigs } = body;
+    const { name, hallType, screenType, capacity, isActive, rows, columns, rowConfigs } = body;
 
     // Check if hall exists
     const existingHall = await prisma.hall.findUnique({
@@ -123,6 +123,7 @@ export async function PUT(
         data: {
           ...(name && { name: name.trim() }),
           ...(hallType && { hallType }),
+          ...(screenType && { screenType }),
           ...(capacity && { capacity: parseInt(capacity) }),
           ...(isActive !== undefined && { isActive }),
           ...(rows && { rows }),
@@ -224,7 +225,7 @@ export async function PATCH(
       );
     }
 
-    const { name, hallType, capacity, rows, columns, isActive, rowConfigs } = body;
+    const { name, hallType, screenType, capacity, rows, columns, isActive, rowConfigs } = body;
 
     const existingHall = await prisma.hall.findUnique({
       where: { id },
@@ -261,6 +262,9 @@ export async function PATCH(
     }
     if (hallType !== undefined) {
       updateData.hallType = hallType;
+    }
+    if (screenType !== undefined) {
+      updateData.screenType = screenType;
     }
     if (capacity !== undefined) {
       updateData.capacity = capacity;

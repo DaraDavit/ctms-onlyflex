@@ -9,6 +9,7 @@ interface Hall {
   id: string;
   name: string;
   hallType: string;
+  screenType: string;
   capacity: number;
   rows: number;
   columns: number;
@@ -28,6 +29,24 @@ export default function HallPreviewPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSeats, setSelectedSeats] = useState<Set<string>>(new Set());
   const [viewMode] = useState<"admin">("admin");
+
+  const getScreenTypeBadge = (type: string) => {
+    const styles: Record<string, string> = {
+      STANDARD_2D: "bg-green-100 text-green-800",
+      THREE_D: "bg-red-100 text-red-800",
+      SCREENX: "bg-orange-100 text-orange-800",
+    };
+    return styles[type] || "bg-gray-100 text-gray-800";
+  };
+
+  const formatScreenType = (type: string) => {
+    const labels: Record<string, string> = {
+      STANDARD_2D: "2D",
+      THREE_D: "3D",
+      SCREENX: "ScreenX",
+    };
+    return labels[type] || type;
+  };
 
   const fetchHalls = useCallback(async () => {
     setIsLoading(true);
@@ -197,6 +216,13 @@ export default function HallPreviewPage() {
                     >
                       {hall.hallType}
                     </span>
+                    <span
+                      className={`px-2 py-1 text-xs font-medium rounded ${getScreenTypeBadge(
+                        hall.screenType
+                      )}`}
+                    >
+                      {formatScreenType(hall.screenType)}
+                    </span>
                   </div>
                   <div className="mt-2 flex items-center gap-4 text-xs text-gray-500">
                     <span>Capacity: {hall.capacity}</span>
@@ -227,6 +253,13 @@ export default function HallPreviewPage() {
                       }`}
                     >
                       {selectedHall.hallType}
+                    </span>
+                    <span
+                      className={`px-2 py-1 text-xs font-medium rounded ${getScreenTypeBadge(
+                        selectedHall.screenType
+                      )}`}
+                    >
+                      {formatScreenType(selectedHall.screenType)}
                     </span>
                     <span className="text-sm text-gray-500">
                       {selectedHall.rows} rows × {selectedHall.columns} columns

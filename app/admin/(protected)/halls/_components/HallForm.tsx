@@ -8,6 +8,7 @@ import {
   getRowOptions,
   seatTypeOptions,
   hallTypeOptions,
+  screenTypeOptions,
   validateRowConfigs,
 } from "@/lib/hall-utils";
 import { getRowLabel } from "@/lib/seat-logic";
@@ -15,6 +16,7 @@ import { getRowLabel } from "@/lib/seat-logic";
 interface HallFormData {
   name: string;
   hallType: string;
+  screenType: string;
   rows: number;
   columns: number;
   isActive: boolean;
@@ -25,6 +27,7 @@ interface Hall {
   id: string;
   name: string;
   hallType: string;
+  screenType: string;
   capacity: number;
   rows: number;
   columns: number;
@@ -55,6 +58,7 @@ interface HallFormProps {
 const initialFormData: HallFormData = {
   name: "",
   hallType: "STANDARD",
+  screenType: "STANDARD_2D",
   rows: 8,
   columns: 10,
   isActive: true,
@@ -81,6 +85,7 @@ export default function HallForm({
       return {
         name: hall.name,
         hallType: hall.hallType,
+        screenType: hall.screenType || "STANDARD_2D",
         rows: hall.rows || 8,
         columns: hall.columns || 10,
         isActive: hall.isActive,
@@ -105,6 +110,7 @@ export default function HallForm({
       setFormData({
         name: hall.name,
         hallType: hall.hallType,
+        screenType: hall.screenType || "STANDARD_2D",
         rows: hall.rows || 8,
         columns: hall.columns || 10,
         isActive: hall.isActive,
@@ -218,11 +224,17 @@ export default function HallForm({
                 <label className="text-sm font-bold text-slate-700">Hall Name</label>
                 <input type="text" name="name" required value={formData.name} onChange={handleChange} className="w-full px-4 py-2.5 border rounded-xl outline-none" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-slate-700">Hall Type</label>
                   <select name="hallType" value={formData.hallType} onChange={handleChange} className="w-full px-4 py-2.5 border rounded-xl bg-white outline-none">
                     {hallTypeOptions.map((type) => (<option key={type.value} value={type.value}>{type.label}</option>))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">Screen Type</label>
+                  <select name="screenType" value={formData.screenType} onChange={handleChange} className="w-full px-4 py-2.5 border rounded-xl bg-white outline-none">
+                    {screenTypeOptions.map((type) => (<option key={type.value} value={type.value}>{type.label}</option>))}
                   </select>
                 </div>
                 <div className="space-y-2">

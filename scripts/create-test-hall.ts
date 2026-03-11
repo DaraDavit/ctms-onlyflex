@@ -12,6 +12,7 @@ async function main() {
       name: "Hall 1",
       capacity: 80,
       hallType: "STANDARD",
+      screenType: "STANDARD_2D",
       columns: 10,
       isActive: true,
       rowConfigs: [

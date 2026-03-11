@@ -4,6 +4,7 @@ interface Hall {
   id: string;
   name: string;
   hallType: string;
+  screenType: string;
   capacity: number;
   rows: number;
   columns: number;
@@ -39,7 +40,25 @@ const getHallTypeBadge = (type: string) => {
     VIP: "bg-purple-100 text-purple-800",
     Regular: "bg-gray-100 text-gray-800",
   };
-  return colors[type] || colors.Regular;
+  return colors[type] || "bg-gray-100 text-gray-800";
+};
+
+const getScreenTypeBadge = (type: string) => {
+  const colors: Record<string, string> = {
+    STANDARD_2D: "bg-green-100 text-green-800",
+    THREE_D: "bg-red-100 text-red-800",
+    SCREENX: "bg-orange-100 text-orange-800",
+  };
+  return colors[type] || "bg-gray-100 text-gray-800";
+};
+
+const formatScreenType = (type: string) => {
+  const labels: Record<string, string> = {
+    STANDARD_2D: "2D",
+    THREE_D: "3D",
+    SCREENX: "ScreenX",
+  };
+  return labels[type] || type;
 };
 
 export default function HallList({
@@ -125,6 +144,13 @@ export default function HallList({
                       )}`}
                     >
                       {hall.hallType}
+                    </span>
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getScreenTypeBadge(
+                        hall.screenType
+                      )}`}
+                    >
+                      {formatScreenType(hall.screenType)}
                     </span>
                     <span className="text-xs text-gray-500">
                       {hall.capacity} seats

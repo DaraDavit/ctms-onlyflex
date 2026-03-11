@@ -37,7 +37,7 @@ export function ScreenIndicator({ hallName }: ScreenIndicatorProps) {
           />
         </div>
         
-        <div className="w-32 h-2 bg-linear-to-b from-slate-700 to-slate-800 rounded-b-lg mt-1" />
+        <div className="w-100 h-2 bg-linear-to-b from-slate-700 to-slate-800 rounded-b-lg mt-1" />
         <div className="mt-4 flex items-center gap-2 text-black text-xs">
           <span>↑</span>
           <span>Front of Hall</span>

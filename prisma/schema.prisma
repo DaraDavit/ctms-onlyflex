@@ -126,6 +126,7 @@ model Hall {
   name        String
   capacity    Int
   hallType    HallType   @default(STANDARD)
+  screenType  ScreenType @default(STANDARD_2D)
   isActive    Boolean    @default(true)
   createdAt   DateTime   @default(now())
   rows        Int        @default(8)
@@ -286,6 +287,12 @@ enum HallType {
   Regular
   STANDARD
   VIP
+}
+
+enum ScreenType {
+  STANDARD_2D
+  THREE_D
+  SCREENX
 }
 
 enum ShowtimeStatus {

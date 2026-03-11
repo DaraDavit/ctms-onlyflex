@@ -11,6 +11,7 @@ export interface RowConfig {
 export interface HallFormData {
   name: string;
   hallType: string;
+  screenType: string;
   rows: number;
   columns: number;
   isActive: boolean;
@@ -114,4 +115,10 @@ export const seatTypeOptions = [
 export const hallTypeOptions = [
   { value: "STANDARD", label: "Standard" },
   { value: "VIP", label: "VIP" },
+];
+
+export const screenTypeOptions = [
+  { value: "STANDARD_2D", label: "2D" },
+  { value: "THREE_D", label: "3D" },
+  { value: "SCREENX", label: "ScreenX" },
 ];
