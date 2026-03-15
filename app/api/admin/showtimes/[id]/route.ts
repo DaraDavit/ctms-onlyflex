@@ -62,6 +62,8 @@ export async function GET(
       },
       basePrice: showtime.basePrice.toString(),
       weekendMultiplier: showtime.weekendMultiplier.toString(),
+      vipMultiplier: showtime.vipMultiplier.toString(),
+      twinseatMultiplier: showtime.twinseatMultiplier.toString(),
     };
 
     return NextResponse.json(response);
@@ -86,7 +88,7 @@ export async function PUT(
 
     const { id } = await params;
     const body = await request.json();
-    const { movieId, hallId, startTime, basePrice, weekendMultiplier, status } = body;
+    const { movieId, hallId, startTime, basePrice, weekendMultiplier, vipMultiplier, twinseatMultiplier, status } = body;
 
     const existingShowtime = await prisma.showtime.findUnique({
       where: { id },
@@ -146,9 +148,9 @@ export async function PUT(
         return NextResponse.json({ error: "Hall not found" }, { status: 404 });
       }
 
-      if (!hallData.isPublished || !hallData.isActive) {
+      if (!hallData.isActive) {
         return NextResponse.json(
-          { error: "Only published and active halls can be scheduled" },
+          { error: "Only active halls can be scheduled" },
           { status: 400 }
         );
       }
@@ -212,6 +214,14 @@ export async function PUT(
       updateData.weekendMultiplier = parseFloat(weekendMultiplier.toString());
     }
 
+    if (vipMultiplier !== undefined) {
+      updateData.vipMultiplier = parseFloat(vipMultiplier.toString());
+    }
+
+    if (twinseatMultiplier !== undefined) {
+      updateData.twinseatMultiplier = parseFloat(twinseatMultiplier.toString());
+    }
+
     if (status) {
       updateData.status = status;
     }
@@ -249,6 +259,8 @@ export async function PUT(
       ...showtime,
       basePrice: showtime.basePrice.toString(),
       weekendMultiplier: showtime.weekendMultiplier.toString(),
+      vipMultiplier: showtime.vipMultiplier.toString(),
+      twinseatMultiplier: showtime.twinseatMultiplier.toString(),
       movie: {
         ...showtime.movie,
         duration: showtime.movie.duration ?? 0,

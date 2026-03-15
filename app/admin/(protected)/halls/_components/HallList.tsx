@@ -9,6 +9,7 @@ interface Hall {
   rows: number;
   columns: number;
   isActive: boolean;
+  isPublished: boolean;
   createdAt: string;
   _count: {
     showtimes: number;
@@ -162,6 +163,11 @@ export default function HallList({
                     <span className="w-2.5 h-2.5 rounded-full bg-green-500"></span>
                   ) : (
                     <span className="w-2.5 h-2.5 rounded-full bg-gray-300"></span>
+                  )}
+                  {hall.isPublished ? (
+                    <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">Pub</span>
+                  ) : (
+                    <span className="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">Draft</span>
                   )}
                   {isMobile && (
                     <svg

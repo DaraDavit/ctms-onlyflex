@@ -14,6 +14,8 @@ interface Hall {
   id: string;
   name: string;
   capacity?: number;
+  isActive: boolean;
+  isPublished: boolean;
 }
 
 interface ShowtimeFormData {
@@ -22,6 +24,8 @@ interface ShowtimeFormData {
   startTime: string;
   basePrice: string;
   weekendMultiplier: string;
+  vipMultiplier: string;
+  twinseatMultiplier: string;
   status: string;
 }
 
@@ -36,6 +40,8 @@ interface ShowtimeFormProps {
     startTime: string;
     basePrice: string;
     weekendMultiplier: string;
+    vipMultiplier: string;
+    twinseatMultiplier: string;
     status: string;
     movie?: Movie;
     hall?: Hall;
@@ -50,6 +56,8 @@ const initialFormData: ShowtimeFormData = {
   startTime: "",
   basePrice: "12.00",
   weekendMultiplier: "1.0",
+  vipMultiplier: "1.5",
+  twinseatMultiplier: "1.5",
   status: "ACTIVE",
 };
 
@@ -110,11 +118,10 @@ export default function ShowtimeForm({
       const response = await fetch("/api/admin/halls");
       if (response.ok) {
         const data = await response.json();
-        const publishedHalls = (data.halls || []).filter(
-          (h: Hall & { isActive: boolean }) =>
-            h.isActive
+        const activeHalls = (data.halls || []).filter(
+          (h: Hall) => h.isActive
         );
-        setHalls(publishedHalls);
+        setHalls(activeHalls);
       }
     } catch (err) {
       console.error("Error fetching halls:", err);
@@ -138,6 +145,8 @@ export default function ShowtimeForm({
           : "",
         basePrice: showtime.basePrice || "12.00",
         weekendMultiplier: showtime.weekendMultiplier || "1.0",
+        vipMultiplier: showtime.vipMultiplier || "1.5",
+        twinseatMultiplier: showtime.twinseatMultiplier || "1.5",
         status: showtime.status || "ACTIVE",
       });
 
@@ -307,10 +316,20 @@ export default function ShowtimeForm({
                     <option value="" className="text-slate-400">Select a hall...</option>
                     {halls.map((hall) => (
                       <option key={hall.id} value={hall.id} className="text-slate-900">
-                        {hall.name} (Capacity: {hall.capacity})
+                        {hall.name} (Capacity: {hall.capacity}){!hall.isPublished ? " - Not Published" : ""}
                       </option>
                     ))}
                   </select>
+                  {formData.hallId && halls.find(h => h.id === formData.hallId && !h.isPublished) && (
+                    <div className="flex items-center gap-2 p-2 bg-amber-50 border border-amber-200 rounded-lg">
+                      <svg className="w-4 h-4 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                      <p className="text-xs font-medium text-amber-800">
+                        This hall is not published. Customers cannot see showtimes in this hall.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -352,32 +371,96 @@ export default function ShowtimeForm({
               )}
 
               {/* Pricing */}
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-1">
-                  <label className="text-sm font-bold text-slate-700">Base Price ($)</label>
-                  <input
-                    type="number"
-                    name="basePrice"
-                    step="0.01"
-                    min="0"
-                    value={formData.basePrice}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl bg-white text-slate-900 font-bold focus:ring-2 focus:ring-indigo-500 outline-none"
-                  />
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-1">
+                    <label className="text-sm font-bold text-slate-700">Base Price ($)</label>
+                    <input
+                      type="number"
+                      name="basePrice"
+                      step="0.01"
+                      min="0"
+                      value={formData.basePrice}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl bg-white text-slate-900 font-bold focus:ring-2 focus:ring-indigo-500 outline-none"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-sm font-bold text-slate-700">Weekend Multiplier</label>
+                    <input
+                      type="number"
+                      name="weekendMultiplier"
+                      step="0.1"
+                      min="1"
+                      max="3"
+                      value={formData.weekendMultiplier}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl bg-white text-slate-900 font-bold focus:ring-2 focus:ring-indigo-500 outline-none"
+                    />
+                  </div>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-sm font-bold text-slate-700">Multiplier</label>
-                  <input
-                    type="number"
-                    name="weekendMultiplier"
-                    step="0.1"
-                    min="1"
-                    max="3"
-                    value={formData.weekendMultiplier}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl bg-white text-slate-900 font-bold focus:ring-2 focus:ring-indigo-500 outline-none"
-                  />
+                {/* Seat Type Multipliers */}
+                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-4">
+                  <p className="text-sm font-bold text-slate-700">Seat Type Multipliers</p>
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium text-slate-600">VIP Seats (Premium)</label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          name="vipMultiplier"
+                          step="0.1"
+                          min="1"
+                          max="3"
+                          value={formData.vipMultiplier}
+                          onChange={handleChange}
+                          className="w-full px-4 py-2.5 pr-8 border border-slate-300 rounded-xl bg-white text-slate-900 font-bold focus:ring-2 focus:ring-indigo-500 outline-none"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">x</span>
+                      </div>
+                      <p className="text-xs text-slate-500">
+                        ${(parseFloat(formData.basePrice) * parseFloat(formData.weekendMultiplier) * parseFloat(formData.vipMultiplier)).toFixed(2)} per ticket
+                      </p>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium text-slate-600">Twinseats (Couple)</label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          name="twinseatMultiplier"
+                          step="0.1"
+                          min="1"
+                          max="3"
+                          value={formData.twinseatMultiplier}
+                          onChange={handleChange}
+                          className="w-full px-4 py-2.5 pr-8 border border-slate-300 rounded-xl bg-white text-slate-900 font-bold focus:ring-2 focus:ring-indigo-500 outline-none"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">x</span>
+                      </div>
+                      <p className="text-xs text-slate-500">
+                        ${(parseFloat(formData.basePrice) * parseFloat(formData.weekendMultiplier) * parseFloat(formData.twinseatMultiplier)).toFixed(2)} per ticket
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Price Preview */}
+                  <div className="pt-3 border-t border-slate-200">
+                    <p className="text-xs font-bold text-slate-500 mb-2">Price Preview ({isWeekend() ? "Weekend" : "Weekday"})</p>
+                    <div className="flex flex-wrap gap-3">
+                      <span className="px-3 py-1.5 bg-blue-100 text-blue-800 text-sm font-bold rounded-lg">
+                        Regular: ${(parseFloat(formData.basePrice) * parseFloat(formData.weekendMultiplier)).toFixed(2)}
+                      </span>
+                      <span className="px-3 py-1.5 bg-purple-100 text-purple-800 text-sm font-bold rounded-lg">
+                        VIP: ${(parseFloat(formData.basePrice) * parseFloat(formData.weekendMultiplier) * parseFloat(formData.vipMultiplier)).toFixed(2)}
+                      </span>
+                      <span className="px-3 py-1.5 bg-pink-100 text-pink-800 text-sm font-bold rounded-lg">
+                        Twinseat: ${(parseFloat(formData.basePrice) * parseFloat(formData.weekendMultiplier) * parseFloat(formData.twinseatMultiplier)).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
 

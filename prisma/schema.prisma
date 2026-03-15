@@ -149,6 +149,8 @@ model Showtime {
   basePrice         Decimal        @db.Decimal(10, 2)
   isWeekend         Boolean        @default(false)
   weekendMultiplier Decimal        @default(1.3)
+  vipMultiplier     Decimal        @default(1.5)
+  twinseatMultiplier Decimal       @default(1.5)
   status            ShowtimeStatus @default(ACTIVE)
   createdAt         DateTime       @default(now())
   bookings          Booking[]

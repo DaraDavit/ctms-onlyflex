@@ -71,7 +71,7 @@ export async function PUT(
 
     const { id } = await params;
     const body = await request.json();
-    const { name, hallType, screenType, capacity, isActive, rows, columns, rowConfigs } = body;
+    const { name, hallType, screenType, capacity, isActive, isPublished, rows, columns, rowConfigs } = body;
 
     // Check if hall exists
     const existingHall = await prisma.hall.findUnique({
@@ -126,6 +126,7 @@ export async function PUT(
           ...(screenType && { screenType }),
           ...(capacity && { capacity: parseInt(capacity) }),
           ...(isActive !== undefined && { isActive }),
+          ...(isPublished !== undefined && { isPublished }),
           ...(rows && { rows }),
           ...(columns && { columns }),
           ...(rowConfigs && { rowConfigs: rowConfigs as unknown as Prisma.InputJsonValue }),

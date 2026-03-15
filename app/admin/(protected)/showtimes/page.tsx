@@ -16,6 +16,8 @@ interface Hall {
   id: string;
   name: string;
   capacity?: number;
+  isActive: boolean;
+  isPublished: boolean;
 }
 
 interface Showtime {
@@ -26,6 +28,8 @@ interface Showtime {
   endTime: string;
   basePrice: string;
   weekendMultiplier: string;
+  vipMultiplier: string;
+  twinseatMultiplier: string;
   isWeekend: boolean;
   status: string;
   movie: Movie;
@@ -163,6 +167,8 @@ export default function ShowtimesPage() {
     startTime: string;
     basePrice: string;
     weekendMultiplier: string;
+    vipMultiplier: string;
+    twinseatMultiplier: string;
     status: string;
   }) {
     setIsSubmitting(true);
@@ -194,6 +200,8 @@ export default function ShowtimesPage() {
     startTime: string;
     basePrice: string;
     weekendMultiplier: string;
+    vipMultiplier: string;
+    twinseatMultiplier: string;
     status: string;
   }) {
     if (!editingShowtime) return;

@@ -20,6 +20,7 @@ interface HallFormData {
   rows: number;
   columns: number;
   isActive: boolean;
+  isPublished: boolean;
   rowConfigs: RowConfig[];
 }
 
@@ -32,6 +33,7 @@ interface Hall {
   rows: number;
   columns: number;
   isActive: boolean;
+  isPublished: boolean;
     seats?: Array<{
     id: string;
     row: string;
@@ -62,6 +64,7 @@ const initialFormData: HallFormData = {
   rows: 8,
   columns: 10,
   isActive: true,
+  isPublished: false,
   rowConfigs: [{ startRow: "A", endRow: "H", seatType: "REGULAR" }],
 };
 
@@ -89,6 +92,7 @@ export default function HallForm({
         rows: hall.rows || 8,
         columns: hall.columns || 10,
         isActive: hall.isActive,
+        isPublished: hall.isPublished ?? false,
         rowConfigs: hallRowConfigs,
       };
     }
@@ -114,6 +118,7 @@ export default function HallForm({
         rows: hall.rows || 8,
         columns: hall.columns || 10,
         isActive: hall.isActive,
+        isPublished: hall.isPublished ?? false,
         rowConfigs: hallRowConfigs,
       });
     } else {
@@ -239,9 +244,15 @@ export default function HallForm({
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-slate-700">Status</label>
-                  <div className="flex items-center h-10.5 px-4 border rounded-xl bg-slate-50">
-                    <input type="checkbox" id="isActive" name="isActive" checked={formData.isActive} onChange={handleChange} className="w-5 h-5 text-indigo-600 rounded" />
-                    <label htmlFor="isActive" className="text-sm text-slate-700 ml-3">Active</label>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center h-10.5 px-4 border rounded-xl bg-slate-50">
+                      <input type="checkbox" id="isActive" name="isActive" checked={formData.isActive} onChange={handleChange} className="w-5 h-5 text-indigo-600 rounded" />
+                      <label htmlFor="isActive" className="text-sm text-slate-700 ml-3">Active</label>
+                    </div>
+                    <div className="flex items-center h-10.5 px-4 border rounded-xl bg-slate-50">
+                      <input type="checkbox" id="isPublished" name="isPublished" checked={formData.isPublished} onChange={handleChange} className="w-5 h-5 text-indigo-600 rounded" />
+                      <label htmlFor="isPublished" className="text-sm text-slate-700 ml-3">Published</label>
+                    </div>
                   </div>
                 </div>
               </div>

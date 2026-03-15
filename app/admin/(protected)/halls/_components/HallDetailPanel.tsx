@@ -13,6 +13,7 @@ interface Hall {
   rows: number;
   columns: number;
   isActive: boolean;
+  isPublished: boolean;
   createdAt: string;
   seats?: Array<{
     id: string;

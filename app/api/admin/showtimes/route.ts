@@ -102,6 +102,8 @@ export async function GET(request: NextRequest) {
       },
       basePrice: showtime.basePrice.toString(),
       weekendMultiplier: showtime.weekendMultiplier.toString(),
+      vipMultiplier: showtime.vipMultiplier.toString(),
+      twinseatMultiplier: showtime.twinseatMultiplier.toString(),
     }));
 
     return NextResponse.json({
@@ -130,7 +132,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { movieId, hallId, startTime, basePrice, weekendMultiplier, status } = body;
+    const { movieId, hallId, startTime, basePrice, weekendMultiplier, vipMultiplier, twinseatMultiplier, status } = body;
 
     if (!movieId || !hallId || !startTime || !basePrice) {
       return NextResponse.json(
@@ -164,9 +166,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Hall not found" }, { status: 404 });
     }
 
-    if (!hall.isPublished || !hall.isActive) {
+    if (!hall.isActive) {
       return NextResponse.json(
-        { error: "Only published and active halls can be scheduled" },
+        { error: "Only active halls can be scheduled" },
         { status: 400 }
       );
     }
@@ -215,6 +217,8 @@ export async function POST(request: NextRequest) {
         endTime: endDateTime,
         basePrice: parseFloat(basePrice),
         weekendMultiplier: multiplier,
+        vipMultiplier: vipMultiplier ? parseFloat(vipMultiplier) : 1.5,
+        twinseatMultiplier: twinseatMultiplier ? parseFloat(twinseatMultiplier) : 1.5,
         isWeekend,
         status: status || "ACTIVE",
       },
@@ -240,6 +244,8 @@ export async function POST(request: NextRequest) {
       ...showtime,
       basePrice: showtime.basePrice.toString(),
       weekendMultiplier: showtime.weekendMultiplier.toString(),
+      vipMultiplier: showtime.vipMultiplier.toString(),
+      twinseatMultiplier: showtime.twinseatMultiplier.toString(),
       movie: {
         ...showtime.movie,
         duration: showtime.movie.duration ?? 0,
