@@ -177,6 +177,7 @@ export async function POST(request: NextRequest) {
 			finalAmount,
 			bookingStatus,
 			seatIds,
+			paymentMethod,
 		} = body;
 
 		if (!userId || !showtimeId || subtotal === undefined || totalDiscount === undefined || finalAmount === undefined) {
@@ -266,19 +267,36 @@ export async function POST(request: NextRequest) {
 					if (seat.seatType === "VIP") price *= Number(existingShowtime.vipMultiplier);
 					if (seat.seatType === "TWINSEAT") price *= Number(existingShowtime.twinseatMultiplier);
 					
+					let discount = 0;
+					if (existingUser.membershipTier === "MEMBER") {
+						discount = price * 0.3; // 30% membership discount
+					}
+
 					return {
 						bookingId: newBooking.id,
 						showtimeId,
 						seatId: seat.id,
 						originalPrice: price,
-						discountAmount: 0, // Simplified for admin
-						finalPrice: price,
+						discountAmount: discount,
+						finalPrice: price - discount,
 						status: "CONFIRMED" as const,
 					};
 				});
 
 				await tx.ticket.createMany({
 					data: ticketData,
+				});
+			}
+
+			if (paymentMethod && (bookingStatus === "CONFIRMED" || !bookingStatus)) {
+				await tx.payment.create({
+					data: {
+						bookingId: newBooking.id,
+						amount: parsedFinalAmount,
+						paymentMethod: paymentMethod,
+						status: "COMPLETED",
+						paidAt: new Date(),
+					},
 				});
 			}
 

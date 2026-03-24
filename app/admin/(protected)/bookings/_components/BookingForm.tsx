@@ -16,7 +16,10 @@ import {
   ChevronRight,
   ChevronLeft,
   Loader2,
-  AlertTriangle
+  AlertTriangle,
+  Ticket,
+  CreditCard,
+  Smartphone
 } from "lucide-react";
 import { SeatIcon } from "@/components/seats/SeatSVG";
 import { Seat } from "@/types/seat";
@@ -49,7 +52,7 @@ interface BookingFormProps {
   onSuccess: () => void;
 }
 
-type Step = "movie" | "customer" | "seats" | "payment";
+type Step = "movie" | "customer" | "seats" | "payment" | "success";
 
 export default function BookingForm({ isOpen, onClose, onSuccess }: BookingFormProps) {
   const [step, setStep] = useState<Step>("movie");
@@ -65,12 +68,15 @@ export default function BookingForm({ isOpen, onClose, onSuccess }: BookingFormP
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [selectedShowtime, setSelectedShowtime] = useState<Showtime | null>(null);
   const [selectedSeatIds, setSelectedSeatIds] = useState<Set<string>>(new Set());
+  const [paymentMethod, setPaymentMethod] = useState("CASH");
+  const [bookedId, setBookedId] = useState<string | null>(null);
   
   // Customer
   const [customer, setCustomer] = useState({
     name: "",
     email: "",
-    phone: ""
+    phone: "",
+    membershipTier: "NONE"
   });
 
   // --- Data Fetching ---
@@ -140,6 +146,26 @@ export default function BookingForm({ isOpen, onClose, onSuccess }: BookingFormP
     }
   }, []);
 
+  const fetchCustomerMembership = useCallback(async (email: string) => {
+    if (!email || !email.includes("@")) return;
+    try {
+      const response = await fetch(`/api/admin/users/search?email=${encodeURIComponent(email)}`);
+      if (response.ok) {
+        const data = await response.json();
+        setCustomer(prev => ({ 
+          ...prev, 
+          name: prev.name || data.name || "", 
+          phone: prev.phone || data.phone || "",
+          membershipTier: data.membershipTier || "NONE" 
+        }));
+      } else {
+        setCustomer(prev => ({ ...prev, membershipTier: "NONE" }));
+      }
+    } catch (err) {
+      console.error("Error fetching membership:", err);
+    }
+  }, []);
+
   // --- Effects ---
 
   useEffect(() => {
@@ -151,7 +177,9 @@ export default function BookingForm({ isOpen, onClose, onSuccess }: BookingFormP
       setSelectedMovie(null);
       setSelectedShowtime(null);
       setSelectedSeatIds(new Set());
-      setCustomer({ name: "", email: "", phone: "" });
+      setCustomer({ name: "", email: "", phone: "", membershipTier: "NONE" });
+      setPaymentMethod("CASH");
+      setBookedId(null);
       setError("");
     }
   }, [isOpen, fetchMovies]);
@@ -211,10 +239,10 @@ export default function BookingForm({ isOpen, onClose, onSuccess }: BookingFormP
     });
   };
 
-  const calculateTotal = useMemo(() => {
-    if (!selectedShowtime) return 0;
+  const pricingSummary = useMemo(() => {
+    if (!selectedShowtime) return { subtotal: 0, discount: 0, total: 0 };
     const basePrice = parseFloat(selectedShowtime.basePrice);
-    let total = 0;
+    let subtotal = 0;
     
     selectedSeatIds.forEach(id => {
        const seat = seats.find(s => s.id === id);
@@ -223,11 +251,17 @@ export default function BookingForm({ isOpen, onClose, onSuccess }: BookingFormP
        let price = basePrice;
        if (seat.seatType === 'VIP') price *= 1.5;
        if (seat.seatType === 'TWINSEAT') price *= 1.5;
-       total += price;
+       subtotal += price;
     });
+
+    const discount = customer.membershipTier === "MEMBER" ? subtotal * 0.3 : 0;
     
-    return total;
-  }, [selectedShowtime, selectedSeatIds, seats]);
+    return {
+      subtotal,
+      discount,
+      total: subtotal - discount
+    };
+  }, [selectedShowtime, selectedSeatIds, seats, customer.membershipTier]);
 
   const handleSubmit = async () => {
     if (!selectedShowtime || selectedSeatIds.size === 0 || !customer.email || !customer.name) {
@@ -274,11 +308,12 @@ export default function BookingForm({ isOpen, onClose, onSuccess }: BookingFormP
         body: JSON.stringify({
           userId,
           showtimeId: selectedShowtime.id,
-          subtotal: calculateTotal,
-          totalDiscount: 0,
-          finalAmount: calculateTotal,
+          subtotal: pricingSummary.subtotal,
+          totalDiscount: pricingSummary.discount,
+          finalAmount: pricingSummary.total,
           bookingStatus: "CONFIRMED",
-          seatIds: Array.from(selectedSeatIds)
+          seatIds: Array.from(selectedSeatIds),
+          paymentMethod: paymentMethod
         })
       });
 
@@ -287,8 +322,10 @@ export default function BookingForm({ isOpen, onClose, onSuccess }: BookingFormP
         throw new Error(errorData.error || "Failed to create booking");
       }
 
+      const finalBooking = await bookingRes.json();
+      setBookedId(finalBooking.id);
+      setStep("success");
       onSuccess();
-      onClose();
     } catch (err: any) {
       setError(err.message || "An error occurred");
     } finally {
@@ -314,6 +351,7 @@ export default function BookingForm({ isOpen, onClose, onSuccess }: BookingFormP
                 {step === "customer" && "Customer Details"}
                 {step === "seats" && "Select Seats"}
                 {step === "payment" && "Finalize Booking"}
+                {step === "success" && "Booking Confirmed"}
               </h3>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 font-bold uppercase tracking-widest">Manual Ticket Issuance</p>
             </div>
@@ -330,15 +368,19 @@ export default function BookingForm({ isOpen, onClose, onSuccess }: BookingFormP
               <div className="flex-1 h-0.5 mx-4 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
                  <div className={`h-full bg-red-600 transition-all duration-500 ${step === "movie" ? "w-0" : "w-full"}`} />
               </div>
-              <ProgressStep active={step === "customer"} completed={step === "seats" || step === "payment"} label="Customer" />
+              <ProgressStep active={step === "customer"} completed={step === "seats" || step === "payment" || step === "success"} label="Customer" />
               <div className="flex-1 h-0.5 mx-4 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
-                 <div className={`h-full bg-red-600 transition-all duration-500 ${step === "seats" || step === "payment" ? "w-full" : "w-0"}`} />
+                 <div className={`h-full bg-red-600 transition-all duration-500 ${step === "seats" || step === "payment" || step === "success" ? "w-full" : "w-0"}`} />
               </div>
-              <ProgressStep active={step === "seats"} completed={step === "payment"} label="Seats" />
+              <ProgressStep active={step === "seats"} completed={step === "payment" || step === "success"} label="Seats" />
               <div className="flex-1 h-0.5 mx-4 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
-                 <div className={`h-full bg-red-600 transition-all duration-500 ${step === "payment" ? "w-full" : "w-0"}`} />
+                 <div className={`h-full bg-red-600 transition-all duration-500 ${step === "payment" || step === "success" ? "w-full" : "w-0"}`} />
               </div>
-              <ProgressStep active={step === "payment"} completed={false} label="Confirm" />
+              <ProgressStep active={step === "payment"} completed={step === "success"} label="Confirm" />
+              <div className="flex-1 h-0.5 mx-4 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+                 <div className={`h-full bg-emerald-500 transition-all duration-500 ${step === "success" ? "w-full" : "w-0"}`} />
+              </div>
+              <ProgressStep active={step === "success"} completed={false} label="Receipt" />
            </div>
         </div>
 
@@ -442,13 +484,17 @@ export default function BookingForm({ isOpen, onClose, onSuccess }: BookingFormP
 
                <div className="space-y-6">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-black uppercase tracking-widest text-zinc-500 flex items-center gap-2">
-                       <Mail className="w-3.5 h-3.5" /> Email Address <span className="text-red-500">*</span>
+                    <label className="text-xs font-black uppercase tracking-widest text-zinc-500 flex items-center justify-between">
+                       <span className="flex items-center gap-2"><Mail className="w-3.5 h-3.5" /> Email Address <span className="text-red-500">*</span></span>
+                       {customer.membershipTier === "MEMBER" && (
+                         <span className="text-[10px] bg-emerald-500 text-white px-2 py-0.5 rounded-full animate-pulse">30% MEMBER DISCOUNT</span>
+                       )}
                     </label>
                     <input 
                       type="email" 
                       value={customer.email}
                       onChange={(e) => setCustomer({...customer, email: e.target.value})}
+                      onBlur={(e) => fetchCustomerMembership(e.target.value)}
                       placeholder="customer@example.com"
                       className="w-full px-5 py-4 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl focus:ring-4 focus:ring-red-500/10 focus:border-red-500 outline-none transition-all font-medium"
                     />
@@ -554,7 +600,7 @@ export default function BookingForm({ isOpen, onClose, onSuccess }: BookingFormP
                               </div>
                               <div className="flex justify-between text-lg font-black pt-2">
                                  <span className="text-zinc-900 dark:text-zinc-50">Total Amount</span>
-                                 <span className="text-red-600">${calculateTotal.toFixed(2)}</span>
+                                 <span className="text-red-600">${pricingSummary.total.toFixed(2)}</span>
                               </div>
                            </div>
                         </div>
@@ -581,61 +627,155 @@ export default function BookingForm({ isOpen, onClose, onSuccess }: BookingFormP
           )}
 
           {step === "payment" && (
-            <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in zoom-in duration-300">
-               <div className="p-8 bg-emerald-50 dark:bg-emerald-900/10 border-2 border-emerald-100 dark:border-emerald-900/20 rounded-[40px] text-center space-y-4">
-                  <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-900/40 rounded-full flex items-center justify-center mx-auto shadow-inner">
-                     <CheckCircle className="w-10 h-10 text-emerald-600" />
+            <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in zoom-in duration-300">
+               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  <div className="lg:col-span-2 space-y-6">
+                     <div className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-3xl overflow-hidden">
+                        <div className="px-8 py-4 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-100/50 dark:bg-zinc-800/50 flex justify-between items-center">
+                           <span className="text-xs font-black uppercase tracking-widest text-zinc-500">Booking Overview</span>
+                        </div>
+                        <div className="p-8 space-y-6">
+                           <div className="grid grid-cols-2 gap-6">
+                              <SummaryItem icon={Film} label="Movie" value={selectedMovie?.title || ""} />
+                              <SummaryItem icon={Monitor} label="Hall" value={selectedShowtime?.hall.name || ""} />
+                              <SummaryItem icon={Calendar} label="Date" value={selectedShowtime ? new Date(selectedShowtime.startTime).toLocaleDateString() : ""} />
+                              <SummaryItem icon={Clock} label="Time" value={selectedShowtime ? new Date(selectedShowtime.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""} />
+                              <SummaryItem icon={User} label="Customer" value={customer.name} />
+                              <SummaryItem icon={Ticket} label="Seats" value={Array.from(selectedSeatIds).map(id => {
+                                 const seat = seats.find(s => s.id === id);
+                                 return seat ? `${seat.row}${seat.seatNumber}` : "";
+                              }).join(", ")} />
+                           </div>
+                        </div>
+                     </div>
+
+                     <div className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-3xl p-8 space-y-6">
+                        <h4 className="text-sm font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
+                           <DollarSign className="w-4 h-4" /> Payment Method
+                        </h4>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                           <PaymentMethodCard 
+                              active={paymentMethod === "CASH"} 
+                              onClick={() => setPaymentMethod("CASH")} 
+                              icon={DollarSign} 
+                              label="Cash" 
+                           />
+                           <PaymentMethodCard 
+                              active={paymentMethod === "CARD"} 
+                              onClick={() => setPaymentMethod("CARD")} 
+                              icon={CreditCard} 
+                              label="Card" 
+                           />
+                           <PaymentMethodCard 
+                              active={paymentMethod === "ONLINE"} 
+                              onClick={() => setPaymentMethod("ONLINE")} 
+                              icon={Monitor} 
+                              label="Online" 
+                           />
+                           <PaymentMethodCard 
+                              active={paymentMethod === "MOBILE_WALLET"} 
+                              onClick={() => setPaymentMethod("MOBILE_WALLET")} 
+                              icon={Smartphone} 
+                              label="Wallet" 
+                           />
+                        </div>
+                     </div>
                   </div>
-                  <div>
-                    <h4 className="text-2xl font-black text-emerald-900 dark:text-emerald-400">Ready to Confirm</h4>
-                    <p className="text-sm text-emerald-700/70 dark:text-emerald-500/70 font-medium">Review the booking details before finalizing.</p>
+
+                  <div className="space-y-6">
+                     <div className="p-8 bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 rounded-[40px] shadow-2xl space-y-6">
+                        <h4 className="text-xs font-black uppercase tracking-widest opacity-50">Pricing Breakdown</h4>
+                        
+                        <div className="space-y-4">
+                           <div className="flex justify-between items-center">
+                              <span className="text-sm font-medium opacity-70">Subtotal</span>
+                              <span className="font-bold tabular-nums">${pricingSummary.subtotal.toFixed(2)}</span>
+                           </div>
+                           
+                           {pricingSummary.discount > 0 && (
+                              <div className="flex justify-between items-center text-emerald-400 dark:text-emerald-600">
+                                 <span className="text-sm font-medium flex items-center gap-1.5">
+                                    <CheckCircle className="w-3.5 h-3.5" /> Membership (30%)
+                                 </span>
+                                 <span className="font-bold tabular-nums">-${pricingSummary.discount.toFixed(2)}</span>
+                              </div>
+                           )}
+
+                           <div className="h-px bg-white/10 dark:bg-zinc-200" />
+                           
+                           <div className="flex justify-between items-end pt-2">
+                              <div>
+                                 <p className="text-[10px] font-black uppercase tracking-widest opacity-50">Total Amount</p>
+                                 <p className="text-4xl font-black tabular-nums">${pricingSummary.total.toFixed(2)}</p>
+                              </div>
+                           </div>
+                        </div>
+
+                        <button 
+                          disabled={isLoading}
+                          onClick={handleSubmit}
+                          className="w-full py-5 bg-red-600 hover:bg-red-700 text-white rounded-3xl font-black text-sm transition-all shadow-lg shadow-red-600/40 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                           {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle className="w-5 h-5" />}
+                           {isLoading ? "Processing..." : "Confirm Booking"}
+                        </button>
+
+                        <button 
+                          onClick={() => setStep("seats")}
+                          className="w-full py-3 text-xs font-bold opacity-50 hover:opacity-100 transition-opacity"
+                        >
+                           Back to Seat Selection
+                        </button>
+                     </div>
                   </div>
                </div>
+            </div>
+          )}
 
-               <div className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-3xl overflow-hidden">
-                  <div className="px-8 py-6 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-100/50 dark:bg-zinc-800/50 flex justify-between items-center">
-                     <span className="text-xs font-black uppercase tracking-widest text-zinc-500">Booking Overview</span>
-                     <span className="text-xs font-black text-red-600 bg-red-50 dark:bg-red-950/30 px-3 py-1 rounded-full uppercase tabular-nums">Pending Confirmation</span>
+          {step === "success" && (
+            <div className="max-w-2xl mx-auto py-12 space-y-8 animate-in fade-in zoom-in duration-500">
+               <div className="text-center space-y-4">
+                  <div className="w-24 h-24 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-6 scale-110">
+                     <CheckCircle className="w-12 h-12 text-emerald-600" />
                   </div>
-                  <div className="p-8 space-y-6">
-                     <div className="grid grid-cols-2 gap-8">
-                        <SummaryItem icon={Film} label="Movie" value={selectedMovie?.title || ""} />
-                        <SummaryItem icon={Monitor} label="Hall" value={selectedShowtime?.hall.name || ""} />
-                        <SummaryItem icon={Calendar} label="Date" value={selectedShowtime ? new Date(selectedShowtime.startTime).toLocaleDateString() : ""} />
-                        <SummaryItem icon={Clock} label="Time" value={selectedShowtime ? new Date(selectedShowtime.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""} />
-                        <SummaryItem icon={User} label="Customer" value={customer.name} />
-                        <SummaryItem icon={Ticket} label="Seats" value={Array.from(selectedSeatIds).map(id => {
-                           const seat = seats.find(s => s.id === id);
-                           return seat ? `${seat.row}${seat.seatNumber}` : "";
-                        }).join(", ")} />
+                  <h4 className="text-4xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight">Booking Confirmed!</h4>
+                  <p className="text-zinc-500 font-medium">Ticket has been issued and linked to {customer.email}</p>
+               </div>
+
+               <div className="bg-white dark:bg-zinc-900 border-2 border-zinc-100 dark:border-zinc-800 rounded-[40px] shadow-xl overflow-hidden">
+                  <div className="p-8 bg-zinc-50/50 dark:bg-zinc-800/30 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center">
+                     <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Reference Number</p>
+                        <p className="text-xl font-black text-red-600">BK-{bookedId?.slice(-8).toUpperCase()}</p>
                      </div>
-                     
-                     <div className="pt-6 border-t border-zinc-200 dark:border-zinc-800 flex justify-between items-end">
-                        <div className="space-y-1">
-                           <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Total Payable</p>
-                           <p className="text-4xl font-black text-zinc-900 dark:text-zinc-50 tabular-nums">${calculateTotal.toFixed(2)}</p>
-                        </div>
-                        <div className="flex items-center gap-2 p-2 px-4 bg-zinc-200 dark:bg-zinc-800 rounded-2xl text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">
-                           <DollarSign className="w-3.5 h-3.5" /> Cash Payment
-                        </div>
+                     <div className="text-right">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Status</p>
+                        <span className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-[10px] font-black rounded-full uppercase">Paid</span>
                      </div>
+                  </div>
+                  <div className="p-8 grid grid-cols-2 gap-8">
+                     <SummaryItem icon={Film} label="Movie" value={selectedMovie?.title || ""} />
+                     <SummaryItem icon={Monitor} label="Session" value={`${new Date(selectedShowtime!.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • ${selectedShowtime?.hall.name}`} />
+                     <SummaryItem icon={Ticket} label="Seats" value={Array.from(selectedSeatIds).map(id => {
+                        const seat = seats.find(s => s.id === id);
+                        return seat ? `${seat.row}${seat.seatNumber}` : "";
+                     }).join(", ")} />
+                     <SummaryItem icon={DollarSign} label="Total Paid" value={`$${pricingSummary.total.toFixed(2)}`} />
                   </div>
                </div>
 
                <div className="flex gap-4">
                   <button 
-                    onClick={() => setStep("seats")}
-                    className="flex-1 py-4 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-2xl font-black text-sm hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all flex items-center justify-center gap-2"
+                    onClick={onClose}
+                    className="flex-1 py-5 bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 rounded-3xl font-black text-sm hover:opacity-90 transition-all active:scale-95"
                   >
-                     <ChevronLeft className="w-4 h-4" /> Change Seats
+                     Close Window
                   </button>
                   <button 
-                    disabled={isLoading}
-                    onClick={handleSubmit}
-                    className="flex-[2] py-4 bg-red-600 text-white rounded-2xl font-black text-sm hover:bg-red-700 transition-all shadow-lg shadow-red-600/20 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                    onClick={() => window.print()}
+                    className="flex-1 py-5 bg-white dark:bg-zinc-900 border-2 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-3xl font-black text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all active:scale-95 flex items-center justify-center gap-2"
                   >
-                     {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-                     {isLoading ? "Finalizing..." : "Complete Booking"}
+                     Print Receipt
                   </button>
                </div>
             </div>
@@ -667,7 +807,7 @@ function ProgressStep({ active, completed, label }: { active: boolean, completed
    );
 }
 
-function SummaryItem({ icon: Icon, label, value }: { icon: any, label: string, value: string }) {
+function SummaryItem({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: string }) {
    return (
       <div className="flex items-start gap-3">
          <div className="p-2 bg-white dark:bg-zinc-800 rounded-lg shadow-sm">
@@ -678,5 +818,27 @@ function SummaryItem({ icon: Icon, label, value }: { icon: any, label: string, v
             <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate max-w-[150px]">{value}</p>
          </div>
       </div>
+   );
+}
+
+function PaymentMethodCard({ active, onClick, icon: Icon, label }: { active: boolean, onClick: () => void, icon: React.ElementType, label: string }) {
+   return (
+      <button 
+         onClick={onClick}
+         className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 group ${
+            active 
+               ? "border-red-600 bg-red-50 dark:bg-red-900/20 ring-4 ring-red-600/10" 
+               : "border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-zinc-300 dark:hover:border-zinc-700"
+         }`}
+      >
+         <div className={`p-2 rounded-xl transition-colors ${
+            active ? "bg-red-600 text-white" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 group-hover:text-zinc-600"
+         }`}>
+            <Icon className="w-5 h-5" />
+         </div>
+         <span className={`text-[10px] font-black uppercase tracking-widest ${
+            active ? "text-red-600" : "text-zinc-400"
+         }`}>{label}</span>
+      </button>
    );
 }
