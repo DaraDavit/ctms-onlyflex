@@ -96,3 +96,25 @@ body {
     --ring: 0 72% 51%;
   }
 }
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .success-ticket, .success-ticket * {
+    visibility: visible;
+  }
+  .success-ticket {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}

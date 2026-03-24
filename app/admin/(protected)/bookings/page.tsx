@@ -231,7 +231,7 @@ export default function AdminBookingsPage() {
   };
 
   const handleBookingDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this booking? This can only be done if there are no tickets or payments linked (due to database constraints).")) return;
+    if (!confirm("Are you sure you want to delete this booking? This will automatically remove all associated tickets and payment records.")) return;
     
     try {
       const response = await fetch(`/api/admin/booking/${id}`, { method: "DELETE" });
@@ -247,6 +247,25 @@ export default function AdminBookingsPage() {
     }
   };
 
+  const handleExport = () => {
+    const params = new URLSearchParams({
+      sortBy: "createdAt",
+      sortOrder,
+      format: "csv"
+    });
+
+    const apiStatus = mapUiFilterToApiStatus(statusFilter);
+    if (apiStatus) params.set("status", apiStatus);
+    if (searchQuery) params.set("search", searchQuery);
+    
+    if (advancedFilters.dateFrom) params.set("dateFrom", advancedFilters.dateFrom);
+    if (advancedFilters.dateTo) params.set("dateTo", advancedFilters.dateTo);
+    if (advancedFilters.movieId) params.set("movieId", advancedFilters.movieId);
+    if (advancedFilters.hallId) params.set("hallId", advancedFilters.hallId);
+
+    window.open(`/api/admin/booking?${params.toString()}`, "_blank");
+  };
+
   return (
     <div className="space-y-8 relative pb-20">
       {/* Header */}
@@ -257,7 +276,7 @@ export default function AdminBookingsPage() {
         </div>
         <div className="flex gap-3 w-full md:w-auto">
           <button
-            onClick={() => {}} // Export logic could go here
+            onClick={handleExport}
             className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#09090b] text-zinc-700 dark:text-zinc-300 font-bold text-sm hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all shadow-sm"
           >
             <Download className="h-4 w-4" />

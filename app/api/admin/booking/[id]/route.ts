@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { Prisma, PrismaClient } from "@/app/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
+import { revalidatePath } from "next/cache";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -230,6 +231,8 @@ export async function PUT(
       },
     });
 
+    revalidatePath("/admin/bookings", "page");
+
     return NextResponse.json(booking);
   } catch (error) {
     console.error("Error updating booking:", error);
@@ -256,39 +259,38 @@ export async function DELETE(
 
     const existingBooking = await prisma.booking.findUnique({
       where: { id },
-      include: {
-        payment: { select: { id: true } },
-        _count: {
-          select: {
-            tickets: true,
-          },
-        },
-      },
+      select: { id: true },
     });
 
     if (!existingBooking) {
       return NextResponse.json({ error: "Booking not found" }, { status: 404 });
     }
 
-    if (existingBooking.payment || existingBooking._count.tickets > 0) {
-      return NextResponse.json(
-        {
-          error:
-            "Cannot delete booking with linked payment or tickets. Remove related records first.",
-          ticketCount: existingBooking._count.tickets,
-          hasPayment: Boolean(existingBooking.payment),
-        },
-        { status: 400 }
-      );
-    }
+    // Use a transaction to delete all related records (cascade delete manually)
+    await prisma.$transaction(async (tx) => {
+      // 1. Delete linked payment if any
+      await tx.payment.deleteMany({
+        where: { bookingId: id },
+      });
 
-    await prisma.booking.delete({ where: { id } });
+      // 2. Delete linked tickets if any
+      await tx.ticket.deleteMany({
+        where: { bookingId: id },
+      });
 
-    return NextResponse.json({ message: "Booking deleted successfully" });
+      // 3. Delete the booking itself
+      await tx.booking.delete({
+        where: { id },
+      });
+    });
+
+    revalidatePath("/admin/bookings", "page");
+
+    return NextResponse.json({ message: "Booking and related records deleted successfully" });
   } catch (error) {
     console.error("Error deleting booking:", error);
     return NextResponse.json(
-      { error: "Failed to delete booking" },
+      { error: "Failed to delete booking due to database constraints" },
       { status: 500 }
     );
   }

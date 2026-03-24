@@ -733,49 +733,105 @@ export default function BookingForm({ isOpen, onClose, onSuccess }: BookingFormP
           )}
 
           {step === "success" && (
-            <div className="max-w-2xl mx-auto py-12 space-y-8 animate-in fade-in zoom-in duration-500">
-               <div className="text-center space-y-4">
-                  <div className="w-24 h-24 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-6 scale-110">
-                     <CheckCircle className="w-12 h-12 text-emerald-600" />
+            <div className="max-w-2xl mx-auto py-8 space-y-8 animate-in fade-in zoom-in duration-500">
+               <div className="text-center space-y-2 no-print">
+                  <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                     <CheckCircle className="w-8 h-8 text-emerald-600" />
                   </div>
-                  <h4 className="text-4xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight">Booking Confirmed!</h4>
-                  <p className="text-zinc-500 font-medium">Ticket has been issued and linked to {customer.email}</p>
+                  <h4 className="text-2xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight">Booking Successful!</h4>
+                  <p className="text-sm text-zinc-500 font-medium">The ticket has been issued and confirmed.</p>
                </div>
 
-               <div className="bg-white dark:bg-zinc-900 border-2 border-zinc-100 dark:border-zinc-800 rounded-[40px] shadow-xl overflow-hidden">
-                  <div className="p-8 bg-zinc-50/50 dark:bg-zinc-800/30 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center">
-                     <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Reference Number</p>
-                        <p className="text-xl font-black text-red-600">BK-{bookedId?.slice(-8).toUpperCase()}</p>
+               {/* Physical Ticket Look */}
+               <div className="relative group success-ticket">
+                  {/* Decorative Notches */}
+                  <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-white dark:bg-[#09090b] rounded-full border border-zinc-200 dark:border-zinc-800 z-10 hidden md:block no-print" />
+                  <div className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-white dark:bg-[#09090b] rounded-full border border-zinc-200 dark:border-zinc-800 z-10 hidden md:block no-print" />
+                  
+                  <div className="bg-white dark:bg-zinc-950 border-2 border-zinc-100 dark:border-zinc-800 rounded-[32px] shadow-2xl overflow-hidden flex flex-col md:flex-row">
+                     {/* Left Side: Main Info */}
+                     <div className="flex-[2] p-8 border-b-2 md:border-b-0 md:border-r-2 border-dashed border-zinc-100 dark:border-zinc-800 relative">
+                        <div className="flex justify-between items-start mb-8">
+                           <div className="flex items-center gap-3">
+                              <div className="p-2.5 bg-red-600 rounded-xl">
+                                 <Film className="w-5 h-5 text-white" />
+                              </div>
+                              <div>
+                                 <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Cinema Ticket</p>
+                                 <p className="text-lg font-black text-zinc-900 dark:text-zinc-50 leading-tight">{selectedMovie?.title}</p>
+                              </div>
+                           </div>
+                           <div className="text-right">
+                              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Ref No.</p>
+                              <p className="text-sm font-black text-red-600">BK-{bookedId?.slice(-6).toUpperCase()}</p>
+                           </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-y-6 gap-x-4">
+                           <TicketInfo label="Date" value={selectedShowtime ? new Date(selectedShowtime.startTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : ""} />
+                           <TicketInfo label="Time" value={selectedShowtime ? new Date(selectedShowtime.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""} />
+                           <TicketInfo label="Hall" value={selectedShowtime?.hall.name || ""} />
+                           <TicketInfo label="Seats" value={Array.from(selectedSeatIds).map(id => {
+                              const seat = seats.find(s => s.id === id);
+                              return seat ? `${seat.row}${seat.seatNumber}` : "";
+                           }).join(", ")} />
+                        </div>
+
+                        <div className="mt-8 pt-6 border-t border-zinc-100 dark:border-zinc-900 flex justify-between items-end">
+                           <div className="space-y-1">
+                              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Total Paid</p>
+                              <p className="text-2xl font-black text-zinc-900 dark:text-zinc-50 tabular-nums">${pricingSummary.total.toFixed(2)}</p>
+                           </div>
+                           <div className="px-3 py-1 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-[10px] font-black text-zinc-500 uppercase">
+                              {paymentMethod} Payment
+                           </div>
+                        </div>
                      </div>
-                     <div className="text-right">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Status</p>
-                        <span className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-[10px] font-black rounded-full uppercase">Paid</span>
+
+                     {/* Right Side: QR Code Area */}
+                     <div className="flex-1 bg-zinc-50/50 dark:bg-zinc-900/50 p-8 flex flex-col items-center justify-center text-center space-y-4">
+                        <div className="relative p-3 bg-white dark:bg-zinc-800 rounded-2xl shadow-lg border border-zinc-100 dark:border-zinc-700 group-hover:scale-105 transition-transform duration-500">
+                           {/* eslint-disable-next-line @next/next/no-img-element */}
+                           <img 
+                              src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=BK-${bookedId}`} 
+                              alt="Booking QR Code"
+                              className="w-32 h-32 dark:invert-[0.05]"
+                           />
+                        </div>
+                        <div className="space-y-1">
+                           <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Scan to Verify</p>
+                           <p className="text-[8px] font-mono text-zinc-400 break-all opacity-50">{bookedId}</p>
+                        </div>
                      </div>
-                  </div>
-                  <div className="p-8 grid grid-cols-2 gap-8">
-                     <SummaryItem icon={Film} label="Movie" value={selectedMovie?.title || ""} />
-                     <SummaryItem icon={Monitor} label="Session" value={`${new Date(selectedShowtime!.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • ${selectedShowtime?.hall.name}`} />
-                     <SummaryItem icon={Ticket} label="Seats" value={Array.from(selectedSeatIds).map(id => {
-                        const seat = seats.find(s => s.id === id);
-                        return seat ? `${seat.row}${seat.seatNumber}` : "";
-                     }).join(", ")} />
-                     <SummaryItem icon={DollarSign} label="Total Paid" value={`$${pricingSummary.total.toFixed(2)}`} />
                   </div>
                </div>
 
-               <div className="flex gap-4">
+               <div className="flex flex-col md:flex-row gap-4 no-print">
+                  <button 
+                    onClick={() => {
+                      setStep("movie");
+                      setSelectedMovie(null);
+                      setSelectedShowtime(null);
+                      setSelectedSeatIds(new Set());
+                      setCustomer({ name: "", email: "", phone: "", membershipTier: "NONE" });
+                      setPaymentMethod("CASH");
+                      setBookedId(null);
+                    }}
+                    className="flex-1 py-4 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-2xl font-black text-sm hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all active:scale-95"
+                  >
+                     Book Another
+                  </button>
                   <button 
                     onClick={onClose}
-                    className="flex-1 py-5 bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 rounded-3xl font-black text-sm hover:opacity-90 transition-all active:scale-95"
+                    className="flex-1 py-4 bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 rounded-2xl font-black text-sm hover:opacity-90 transition-all active:scale-95 shadow-xl shadow-black/10"
                   >
                      Close Window
                   </button>
                   <button 
                     onClick={() => window.print()}
-                    className="flex-1 py-5 bg-white dark:bg-zinc-900 border-2 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-3xl font-black text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all active:scale-95 flex items-center justify-center gap-2"
+                    className="flex-1 py-4 bg-white dark:bg-zinc-900 border-2 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-2xl font-black text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all active:scale-95 flex items-center justify-center gap-2"
                   >
-                     Print Receipt
+                     <Monitor className="w-4 h-4" /> Print Ticket
                   </button>
                </div>
             </div>
@@ -840,5 +896,14 @@ function PaymentMethodCard({ active, onClick, icon: Icon, label }: { active: boo
             active ? "text-red-600" : "text-zinc-400"
          }`}>{label}</span>
       </button>
+   );
+}
+
+function TicketInfo({ label, value }: { label: string, value: string }) {
+   return (
+      <div className="space-y-0.5">
+         <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{label}</p>
+         <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{value}</p>
+      </div>
    );
 }

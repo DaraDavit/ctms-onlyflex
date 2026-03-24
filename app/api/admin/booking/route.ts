@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { Prisma, PrismaClient } from "@/app/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
+import { revalidatePath } from "next/cache";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -39,8 +40,17 @@ export async function GET(request: NextRequest) {
 		const userId = searchParams.get("userId") || "";
 		const showtimeId = searchParams.get("showtimeId") || "";
 		const status = searchParams.get("status") || "";
+		const search = searchParams.get("search") || "";
+		const dateFrom = searchParams.get("dateFrom") || "";
+		const dateTo = searchParams.get("dateTo") || "";
+		const movieId = searchParams.get("movieId") || "";
+		const hallId = searchParams.get("hallId") || "";
+		
 		const sortBy = searchParams.get("sortBy") || "createdAt";
 		const sortOrder = searchParams.get("sortOrder") === "asc" ? "asc" : "desc";
+		const format = searchParams.get("format");
+		const isExport = format === "csv";
+		
 		const page = Math.max(parseInt(searchParams.get("page") || "1", 10), 1);
 		const limit = Math.max(parseInt(searchParams.get("limit") || "10", 10), 1);
 
@@ -63,6 +73,30 @@ export async function GET(request: NextRequest) {
 			}
 
 			where.bookingStatus = status;
+		}
+
+		if (search) {
+			where.OR = [
+				{ id: { contains: search, mode: "insensitive" } },
+				{ user: { name: { contains: search, mode: "insensitive" } } },
+				{ user: { email: { contains: search, mode: "insensitive" } } },
+				{ showtime: { movie: { title: { contains: search, mode: "insensitive" } } } },
+			];
+		}
+
+		if (movieId) {
+			where.showtime = { ...where.showtime as object, movieId };
+		}
+
+		if (hallId) {
+			where.showtime = { ...where.showtime as object, hallId };
+		}
+
+		if (dateFrom || dateTo) {
+			const dateFilter: Prisma.DateTimeFilter = {};
+			if (dateFrom) dateFilter.gte = new Date(dateFrom);
+			if (dateTo) dateFilter.lte = new Date(dateTo);
+			where.showtime = { ...where.showtime as object, startTime: dateFilter };
 		}
 
 		const allowedSortFields = new Set([
@@ -135,11 +169,59 @@ export async function GET(request: NextRequest) {
 					},
 				},
 				orderBy: { [safeSortBy]: sortOrder },
-				skip,
-				take: limit,
+				...(isExport ? {} : { skip, take: limit }),
 			}),
 			prisma.booking.count({ where }),
 		]);
+
+		if (isExport) {
+			const headers = [
+				"Booking ID",
+				"Customer Name",
+				"Customer Email",
+				"Movie",
+				"Hall",
+				"Showtime",
+				"Seats",
+				"Subtotal",
+				"Discount",
+				"Final Amount",
+				"Status",
+				"Payment Method",
+				"Created At"
+			];
+
+			const rows = bookings.map(b => {
+				const seats = b.tickets.map(t => `${t.seat.row}${t.seat.seatNumber ?? t.seat.column}`).join("; ");
+				return [
+					b.id,
+					b.user.name || "N/A",
+					b.user.email,
+					b.showtime.movie.title,
+					b.showtime.hall.name,
+					new Date(b.showtime.startTime).toLocaleString(),
+					seats,
+					b.subtotal.toString(),
+					b.totalDiscount.toString(),
+					b.finalAmount.toString(),
+					b.bookingStatus,
+					b.payment?.paymentMethod || "N/A",
+					b.createdAt.toISOString()
+				];
+			});
+
+			const csvContent = [
+				headers.join(","),
+				...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+			].join("\n");
+
+			return new NextResponse(csvContent, {
+				headers: {
+					"Content-Type": "text/csv",
+					"Content-Disposition": `attachment; filename="bookings-export-${new Date().toISOString().split('T')[0]}.csv"`
+				}
+			});
+		}
 
 		return NextResponse.json({
 			bookings,
@@ -316,6 +398,8 @@ export async function POST(request: NextRequest) {
 				tickets: true,
 			},
 		});
+
+		revalidatePath("/admin/bookings", "page");
 
 		return NextResponse.json(fullBooking, { status: 201 });
 	} catch (error) {
