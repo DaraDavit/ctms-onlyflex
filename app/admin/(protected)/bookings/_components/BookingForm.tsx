@@ -421,12 +421,12 @@ export default function BookingForm({ isOpen, onClose, onSuccess }: BookingFormP
                   <h4 className="text-sm font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
                      <Film className="w-4 h-4" /> 1. Select Movie
                   </h4>
-                  <div className="grid grid-cols-2 gap-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="grid grid-cols-2 gap-3 max-h-100 overflow-y-auto pr-2 custom-scrollbar">
                      {movies.map(movie => (
                         <button
                           key={movie.id}
                           onClick={() => handleMovieSelect(movie)}
-                          className={`group relative aspect-[2/3] rounded-2xl overflow-hidden border-2 transition-all ${
+                          className={`group relative aspect-2/3ounded-2xl overflow-hidden border-2 transition-all ${
                             selectedMovie?.id === movie.id 
                               ? "border-red-600 ring-4 ring-red-600/10 shadow-xl" 
                               : "border-transparent hover:border-zinc-300 dark:hover:border-zinc-700"
@@ -467,7 +467,7 @@ export default function BookingForm({ isOpen, onClose, onSuccess }: BookingFormP
                        <p className="text-zinc-500 font-medium">No active showtimes found for this movie.</p>
                     </div>
                   ) : (
-                    <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                    <div className="space-y-3 max-h-100 overflow-y-auto pr-2 custom-scrollbar">
                        {showtimes.map(st => (
                           <button
                             key={st.id}
@@ -561,7 +561,7 @@ export default function BookingForm({ isOpen, onClose, onSuccess }: BookingFormP
                   <button 
                     disabled={!customer.email || !customer.name}
                     onClick={() => setStep("seats")}
-                    className="flex-[2] py-4 bg-red-600 text-white rounded-2xl font-black text-sm hover:bg-red-700 transition-all shadow-lg shadow-red-600/20 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="flex-2 py-4 bg-red-600 text-white rounded-2xl font-black text-sm hover:bg-red-700 transition-all shadow-lg shadow-red-600/20 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                      Select Seats <ChevronRight className="w-4 h-4" />
                   </button>
@@ -572,7 +572,7 @@ export default function BookingForm({ isOpen, onClose, onSuccess }: BookingFormP
           {step === "seats" && (
             <div className="space-y-8 animate-in fade-in zoom-in duration-300">
                <div className="flex flex-col lg:flex-row gap-8">
-                  <div className="flex-1 bg-zinc-50 dark:bg-[#050505] border border-zinc-100 dark:border-zinc-900 rounded-[40px] p-12 overflow-x-auto min-h-[500px] flex items-center justify-center">
+                  <div className="flex-1 bg-zinc-50 dark:bg-[#050505] border border-zinc-100 dark:border-zinc-900 rounded-[40px] p-12 overflow-x-auto min-h-125 flex items-center justify-center">
                      <SeatGrid 
                         seats={seats}
                         columns={selectedShowtime?.hall.capacity ? 12 : 10} // Default or dynamic
@@ -839,9 +839,9 @@ export default function BookingForm({ isOpen, onClose, onSuccess }: BookingFormP
                   <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-white dark:bg-[#09090b] rounded-full border border-zinc-200 dark:border-zinc-800 z-10 hidden md:block no-print" />
                   <div className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-white dark:bg-[#09090b] rounded-full border border-zinc-200 dark:border-zinc-800 z-10 hidden md:block no-print" />
                   
-                  <div className="bg-white dark:bg-zinc-950 border-2 border-zinc-100 dark:border-zinc-800 rounded-[32px] shadow-2xl overflow-hidden flex flex-col md:flex-row">
+                  <div className="bg-white dark:bg-zinc-950 border-2 border-zinc-100 dark:border-zinc-800 rounded-4xl shadow-2xl overflow-hidden flex flex-col md:flex-row">
                      {/* Left Side: Main Info */}
-                     <div className="flex-[2] p-8 border-b-2 md:border-b-0 md:border-r-2 border-dashed border-zinc-100 dark:border-zinc-800 relative">
+                     <div className="flex-2 p-8 border-b-2 md:border-b-0 md:border-r-2 border-dashed border-zinc-100 dark:border-zinc-800 relative">
                         <div className="flex justify-between items-start mb-8">
                            <div className="flex items-center gap-3">
                               <div className="p-2.5 bg-red-600 rounded-xl">
@@ -967,7 +967,7 @@ function SummaryItem({ icon: Icon, label, value }: { icon: React.ElementType, la
          </div>
          <div>
             <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{label}</p>
-            <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate max-w-[150px]">{value}</p>
+            <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate max-w-37.5">{value}</p>
          </div>
       </div>
    );
