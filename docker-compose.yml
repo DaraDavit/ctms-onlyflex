@@ -13,8 +13,8 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
+      test: ["CMD-SHELL", "pg_isready -U postgres -d moviedb"]
+      interval: 5s # Faster checks for development
       timeout: 5s
       retries: 5
 
@@ -25,13 +25,17 @@ services:
     restart: always
     ports:
       - "3000:3000"
-    environment:
-      DATABASE_URL: postgresql://postgres:Admin234@db:5432/moviedb
-      AUTH_SECRET: W9Q28TcFTHEEgyy2FMxDNQ7H5Tod9D49Xyu/8cnFTbk=
-      AUTH_URL: http://localhost:3000
+    # Ensure the app waits for the DB healthcheck to pass
     depends_on:
       db:
         condition: service_healthy
+    environment:
+      # Use the service name 'db' as the hostname
+      DATABASE_URL: "postgresql://postgres:Admin234@db:5432/moviedb?schema=public"
+      AUTH_SECRET: "your-secret-key-change-this-in-production"
+      # Changed to your intended production/container URL
+      NEXTAUTH_URL: "http://localhost:3000" 
+      AUTH_URL: "http://localhost:3000"
 
 volumes:
   postgres_data:
