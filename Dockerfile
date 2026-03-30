@@ -17,6 +17,10 @@ RUN npm ci && npx prisma generate
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
+
+# Copy env file for build (prisma.config.ts needs DATABASE_URL)
+COPY .env.production .env.local
+
 COPY . .
 
 # Build Next.js
