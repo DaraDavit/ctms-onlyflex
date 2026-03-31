@@ -57,7 +57,7 @@ export function CustomDropdown({
         </label>
       )}
       <button
-        className="h-12 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-4 pr-10 text-sm text-left focus:ring-2 focus:ring-red-500 flex items-center relative"
+        className="h-12 w-full  cursor-pointer rounded-lg border border-zinc-800 bg-zinc-950 px-4 pr-10 text-sm text-left focus:ring-2 focus:ring-red-500 flex items-center relative"
         onClick={() => setOpen(!open)}
         type="button"
       >

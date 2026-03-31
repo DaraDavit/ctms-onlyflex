@@ -14,7 +14,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { FilterMore } from "./FilterMore";
-import { Button } from "@/components/ui/ButtonAddNew";
+import { ButtonRed } from "@/components/ui/ButtonRed";
 import { useForm } from "react-hook-form";
 import BaseFormModal from "@/components/utils/BaseFormModal";
 import BaseInput from "@/components/utils/BaseInput";
@@ -22,7 +22,7 @@ import { CustomDropdown } from "@/components/ui/CustomDropdown";
 import React from "react";
 import { DatePicker } from "@/components/ui/DatePicker";
 import BaseTextBox from "@/components/utils/BaseTextBox";
-import ButtonCancel from "@/components/ui/ButtonCancel";
+import ButtonGray from "@/components/ui/ButtonGray";
 
 type BookingStatus = "PENDING" | "CONFIRMED" | "CANCELLED" | "REFUNDED";
 
@@ -345,7 +345,7 @@ export default function AdminBookingsPage() {
     URL.revokeObjectURL(url);
   }, [filteredBookings, formatMoney, formatShowtime, page]);
 
-  const handleAddBooking = (data: any) => {
+  const handleAddBooking = (data: unknown) => {
     // TODO: Implement booking creation logic
     setShowForm(false);
     alert("Booking created!\n" + JSON.stringify(data, null, 2));
@@ -354,10 +354,10 @@ export default function AdminBookingsPage() {
   return (
     <div className="text-zinc-100">
       <div className="flex flex-1 justify-end mb-4">
-        <Button onClick={() => setShowForm(true)}>
+        <ButtonRed onClick={() => setShowForm(true)}>
           <Plus className="h-5 w-5" />
           Add New Booking
-        </Button>
+        </ButtonRed>
       </div>
 
       <BaseFormModal
@@ -416,13 +416,13 @@ export default function AdminBookingsPage() {
             placeholder="Enter movie synopsis..."
           />
           <div className="flex gap-4">
-            <ButtonCancel
+            <ButtonGray
               onClick={() => setShowForm(false)}
               className="flex-1"
             />
-            <Button type="submit" className="flex-1">
+            <ButtonRed type="submit" className="flex-1">
               Create Booking
-            </Button>
+            </ButtonRed>
           </div>
         </form>
       </BaseFormModal>
