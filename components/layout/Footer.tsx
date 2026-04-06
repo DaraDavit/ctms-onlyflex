@@ -25,7 +25,7 @@ export function Footer({ onNavigate }: FooterProps) {
                 <Film className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className="font-bold text-xl text-white">OnlyFlix</h3>
+                <h3 className="font-bold text-xl text-white">OnlyFlex</h3>
                 <p className="text-xs text-zinc-500">Premium Cinema</p>
               </div>
             </div>
@@ -170,7 +170,7 @@ export function Footer({ onNavigate }: FooterProps) {
         {/* Bottom Bar */}
         <div className="border-t border-zinc-800 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-zinc-500 text-sm">
-            © 2026 OnlyFlix. All rights reserved.
+            © 2026 OnlyFlex. All rights reserved.
           </p>
           <div className="flex gap-6">
             <a href="#" className="text-zinc-500 hover:text-red-500 text-sm transition-colors">

@@ -58,7 +58,7 @@ function LoginFormContent() {
           ADMIN PORTAL
         </h2>
         <p className="mt-2 text-xl text-white/80">
-          Only<span className="text-red-500 font-bold">Flix</span> 
+          Only<span className="text-red-500 font-bold">Flex</span> 
         </p>
       </div>
 
@@ -148,7 +148,7 @@ function LoadingFallback() {
           ADMIN PORTAL
         </h2>
         <p className="mt-2 text-xl text-white/80">
-          Only<span className="text-red-500 font-bold">Flix</span> 
+          Only<span className="text-red-500 font-bold">Flex</span> 
         </p>
       </div>
       <div className="text-center text-white/60">Loading...</div>

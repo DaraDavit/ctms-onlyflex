@@ -9,7 +9,7 @@ import CustomerMovieService, {
   type CustomerMovieShowtime,
 } from '@/components/services/CustomerMovieService';
 
-const DEFAULT_THEATER_NAME = 'OnlyFlix Downtown';
+const DEFAULT_THEATER_NAME = 'OnlyFlex Downtown';
 
 type DateOption = {
   value: string;
@@ -65,9 +65,9 @@ function addDays(date: Date, days: number) {
 
 // Available theaters (fallback/static list)
 const theaters = [
-  { id: 1, name: 'OnlyFlix Central', address: 'Norodom Blvd, Phnom Penh' },
-  { id: 2, name: 'OnlyFlix Riverside', address: 'Sisowath Quay, Phnom Penh' },
-  { id: 3, name: 'OnlyFlix Sen Sok', address: 'Street 2004, Phnom Penh' },
+  { id: 1, name: 'OnlyFlex Central', address: 'Norodom Blvd, Phnom Penh' },
+  { id: 2, name: 'OnlyFlex Riverside', address: 'Sisowath Quay, Phnom Penh' },
+  { id: 3, name: 'OnlyFlex Sen Sok', address: 'Street 2004, Phnom Penh' },
 ];
 
 interface ShowtimesPageProps {
