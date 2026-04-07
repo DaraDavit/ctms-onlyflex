@@ -22,13 +22,13 @@ A full-stack cinema booking system built with Next.js 16, TypeScript, Tailwind C
 ### 1. SSH into Server
 
 ```bash
-ssh vit@86.48.3.217
+ssh YOUR_USERNAME@YOUR_SERVER_IP
 ```
 
 ### 2. Navigate to Project
 
 ```bash
-cd /home/vit/ctms-onlyflex
+cd /home/YOUR_USERNAME/ctms-onlyflex
 ```
 
 ### 3. Configure Environment
@@ -43,7 +43,7 @@ Edit `.env` with your settings:
 ```
 POSTGRES_PASSWORD=your_strong_password
 AUTH_SECRET=run_locally: openssl rand -base64 32
-APP_URL=http://86.48.3.217:3000
+APP_URL=http://YOUR_SERVER_IP:3000
 ```
 
 ### 4. Configure Firewall
@@ -71,7 +71,7 @@ docker compose exec app npx prisma migrate deploy
 ### 7. Access Application
 
 ```
-http://86.48.3.217:3000
+http://YOUR_SERVER_IP:3000
 ```
 
 ## Troubleshooting
@@ -130,7 +130,7 @@ Purchase from providers like:
 
 Add DNS A record:
 - **Host:** @ (or subdomain)
-- **Value:** 86.48.3.217
+- **Value:** YOUR_SERVER_IP
 
 ### 3. Install SSL Certificate
 
@@ -154,7 +154,7 @@ docker compose up -d --build
 
 ## Admin Access
 
-1. Visit `http://86.48.3.217/admin/login`
+1. Visit `http://YOUR_SERVER_IP/admin/login`
 2. Credentials are set via `ADMIN_EMAIL` and `ADMIN_PASSWORD` in your `.env` file
 
 ## Environment Variables
