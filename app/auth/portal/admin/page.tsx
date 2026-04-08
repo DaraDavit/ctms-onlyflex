@@ -2,24 +2,51 @@
 
 import { Suspense } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import Background from "@/components/layout/Background";
 
 function LoginFormContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [csrfToken, setCsrfToken] = useState("");
+  const [accessDenied, setAccessDenied] = useState(false);
 
   useEffect(() => {
-    fetch("/api/auth/csrf")
+    const secret = searchParams.get("secret");
+    if (!secret) {
+      setAccessDenied(true);
+      return;
+    }
+
+    fetch("/api/auth/verify-portal-secret", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ secret }),
+    })
       .then((res) => res.json())
-      .then((data) => setCsrfToken(data.csrfToken))
-      .catch(console.error);
-  }, []);
+      .then((data) => {
+        if (!data.valid) {
+          setAccessDenied(true);
+        }
+      })
+      .catch(() => {
+        setAccessDenied(true);
+      });
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (!accessDenied) {
+      fetch("/api/auth/csrf")
+        .then((res) => res.json())
+        .then((data) => setCsrfToken(data.csrfToken))
+        .catch(console.error);
+    }
+  }, [accessDenied]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -49,6 +76,26 @@ function LoginFormContent() {
     } else {
       router.push("/admin/dashboard");
     }
+  }
+
+  if (accessDenied) {
+    return (
+      <div className="relative max-w-md w-full p-8 bg-black/40 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl">
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold text-white tracking-wider">
+            ACCESS DENIED
+          </h2>
+          <p className="mt-2 text-xl text-white/80">
+            Invalid or missing access token
+          </p>
+        </div>
+        <div className="text-center">
+          <a href="/" className="text-sm text-white/60 hover:text-white transition-colors">
+            ← Back to main site
+          </a>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -151,7 +198,7 @@ function LoadingFallback() {
           Only<span className="text-red-500 font-bold">Flex</span> 
         </p>
       </div>
-      <div className="text-center text-white/60">Loading...</div>
+      <div className="text-center text-white/60">Verifying access...</div>
     </div>
   );
 }

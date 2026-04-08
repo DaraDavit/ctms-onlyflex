@@ -54,7 +54,7 @@ export function CustomerRouteHeader() {
     <CustomerHeader
       currentPage={getCurrentPage(pathname)}
       onNavigate={handleNavigate}
-      onAdminClick={() => router.push("/admin/login")}
+      onAdminClick={() => router.push(`/auth/portal/admin?secret=${process.env.NEXT_PUBLIC_ADMIN_PORTAL_SECRET}`)}
     />
   );
 }
