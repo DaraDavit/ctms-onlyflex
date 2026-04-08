@@ -22,7 +22,7 @@ import CustomerMovieSearch from "@/components/layout/CustomerMovieSearch";
 interface CustomerHeaderProps {
   currentPage: string;
   onNavigate: (page: string) => void;
-  onAdminClick: () => void;
+  onAdminClick?: () => void;
 }
 
 export function CustomerHeader({ currentPage, onNavigate, onAdminClick }: CustomerHeaderProps) {
@@ -306,13 +306,15 @@ export function CustomerHeader({ currentPage, onNavigate, onAdminClick }: Custom
                 </ButtonRed>
               </div>
             )}
-            <button 
-              onClick={onAdminClick}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-zinc-900 border border-zinc-800 rounded-lg font-medium"
-            >
-              <Settings className="w-4 h-4" />
-              Admin Portal
-            </button>
+            {onAdminClick && (
+              <button 
+                onClick={onAdminClick}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-zinc-900 border border-zinc-800 rounded-lg font-medium"
+              >
+                <Settings className="w-4 h-4" />
+                Admin Portal
+              </button>
+            )}
           </div>
         )}
       </div>

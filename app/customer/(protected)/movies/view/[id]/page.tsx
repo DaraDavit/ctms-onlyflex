@@ -19,6 +19,7 @@ import CustomerMovieService from "@/components/services/CustomerMovieService";
 import RatingMovie from "@/app/customer/(protected)/movies/RatingMovie";
 import { isFavoriteMovie, toggleFavoriteMovie } from "@/lib/favorite-movies";
 
+<<<<<<< HEAD
 type DateOption = {
   value: string;
   label: string;
@@ -55,6 +56,13 @@ function addDays(date: Date, days: number) {
   next.setDate(next.getDate() + days);
   return next;
 }
+=======
+const theaters = [
+  { id: 1, name: "OnlyFlex Central", address: "Norodom Blvd, Phnom Penh" },
+  { id: 2, name: "OnlyFlex Riverside", address: "Sisowath Quay, Phnom Penh" },
+  { id: 3, name: "OnlyFlex Sen Sok", address: "Street 2004, Phnom Penh" },
+];
+>>>>>>> 5f7fb2b6ac376862652be3121f7da03e6feec310
 
 export default function MovieDetailPage() {
   const params = useParams<{ id: string }>();

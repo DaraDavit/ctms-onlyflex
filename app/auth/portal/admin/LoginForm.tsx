@@ -1,20 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import Background from "@/components/layout/Background";
 
-export default function AdminLoginPage() {
+export default function LoginForm() {
+  const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
-    setLoading(false);
+    setLoading(true);
 
     const formData = new FormData(e.currentTarget);
     const email = formData.get("email") as string;
@@ -26,22 +25,17 @@ export default function AdminLoginPage() {
       return;
     }
 
-    try {
-      const result = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-      });
+    const result = await signIn("credentials", {
+      email,
+      password,
+      redirect: false,
+    });
 
-      if (result?.error) {
-        setError("Invalid credentials");
-      } else {
-        window.location.href = "/admin/dashboard";
-      }
-    } catch {
-      setError("An error occurred. Please try again.");
-    } finally {
+    if (result?.error) {
+      setError("Invalid credentials");
       setLoading(false);
+    } else {
+      router.push("/admin/dashboard");
     }
   }
 
@@ -54,7 +48,7 @@ export default function AdminLoginPage() {
             ADMIN PORTAL
           </h2>
           <p className="mt-2 text-xl text-white/80">
-            Only<span className="text-red-500 font-bold">Flix</span> 
+            Only<span className="text-red-500 font-bold">Flex</span> 
           </p>
         </div>
 
@@ -87,18 +81,11 @@ export default function AdminLoginPage() {
               <input
                 id="password"
                 name="password"
-                type={showPassword ? "text" : "password"}
+                type="password"
                 required
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50 transition-all pr-20"
+                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50 transition-all"
                 placeholder="Enter your password"
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-10 text-white/60 hover:text-white text-sm font-medium transition-colors"
-              >
-                {showPassword ? "Hide" : "Show"}
-              </button>
             </div>
           </div>
 
@@ -106,18 +93,13 @@ export default function AdminLoginPage() {
             <label className="flex items-center cursor-pointer">
               <input
                 type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
                 className="w-4 h-4 rounded border-white/30 bg-white/10 text-red-500 focus:ring-red-500/50 focus:ring-offset-0"
               />
               <span className="ml-2 text-sm text-white/70">Remember me</span>
             </label>
-            <Link
-              href="/admin/forgot-password"
-              className="text-sm text-white/60 hover:text-white transition-colors"
-            >
+            <span className="text-sm text-white/60">
               Forgot password?
-            </Link>
+            </span>
           </div>
 
           <button
@@ -129,9 +111,9 @@ export default function AdminLoginPage() {
           </button>
 
           <div className="text-center">
-            <Link href="/" className="text-sm text-white/60 hover:text-white transition-colors">
+            <a href="/" className="text-sm text-white/60 hover:text-white transition-colors">
               ← Back to main site
-            </Link>
+            </a>
           </div>
         </form>
       </div>

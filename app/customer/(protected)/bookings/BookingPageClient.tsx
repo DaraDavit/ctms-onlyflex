@@ -424,6 +424,7 @@ function BookingPageClient({ showtime, onBack }: BookingPageProps) {
               totalAmount={getTotalAmount()}
               onPaymentMethodSelect={setPaymentMethod}
               selectedMethod={paymentMethod}
+              onChange={setPaymentMethod}
             />
           </div>
         )}
