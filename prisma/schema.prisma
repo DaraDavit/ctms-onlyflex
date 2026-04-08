@@ -271,6 +271,7 @@ enum Role {
   USER
   ADMIN
   MANAGER
+  FRONT_DESK
 }
 
 enum MembershipTier {

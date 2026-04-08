@@ -72,6 +72,11 @@ export const {
           await logAdminActivity(user.id, "LOGIN", "Admin logged in successfully");
         }
 
+        // Log front-desk login
+        if (user.role === "FRONT_DESK") {
+          await logAdminActivity(user.id, "FRONT_DESK_LOGIN", "Front desk staff logged in");
+        }
+
         return {
           id: user.id,
           email: user.email,
