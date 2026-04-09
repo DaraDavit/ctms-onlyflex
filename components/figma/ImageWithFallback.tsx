@@ -9,11 +9,7 @@ interface ImageWithFallbackProps extends ImageProps {
 
 export function ImageWithFallback({
   src,
-<<<<<<< HEAD
-  fallbackSrc = "/window.svg",
-=======
   fallbackSrc = "/placeholder.jpg",
->>>>>>> customer
   alt,
   ...props
 }: ImageWithFallbackProps) {
