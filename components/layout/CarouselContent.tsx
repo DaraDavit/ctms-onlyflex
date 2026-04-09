@@ -124,8 +124,8 @@ export default function CarouselContent() {
             <div className="flex gap-2">
               {genres.length > 0
                 ? genres
-                    .filter((genre: any) => typeof genre === "string" || typeof genre === "number")
-                    .map((genre: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined, idx: string) => (
+                    .filter((genre: string | number) => typeof genre === "string" || typeof genre === "number")
+                    .map((genre: string | number, idx: string) => (
                       <span
                         key={String(genre) + idx}
                         className="px-3 py-1 cursor-pointer hover:bg-white/20 transition-all bg-zinc-800 border border-zinc-700 rounded-md text-sm text-white"
@@ -153,7 +153,7 @@ export default function CarouselContent() {
 
           {movies.length > 1 ? (
             <div className="mt-8 flex items-center gap-2">
-              {movies.map((movie: { id: Key | null | undefined; title: any; }, index: SetStateAction<number>) => (
+              {movies.map((movie: { id: Key | null | undefined; title: string }, index: number) => (
                 <button
                   key={movie.id}
                   type="button"

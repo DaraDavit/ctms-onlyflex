@@ -26,8 +26,26 @@ interface UserDetailsProps {
   onUpdate: () => void;
 }
 
+interface UserData {
+  id: string;
+  email: string;
+  name: string | null;
+  phone: string | null;
+  role: string;
+  membershipTier: string;
+  createdAt: string;
+  _count?: { bookings: number; reviews: number };
+  bookings?: {
+    id: string;
+    createdAt: string;
+    finalAmount: number;
+    bookingStatus: string;
+    showtime: { movie: { title: string } };
+  }[];
+}
+
 export default function UserDetails({ userId, onClose, onUpdate }: UserDetailsProps) {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState("");
@@ -55,7 +73,7 @@ export default function UserDetails({ userId, onClose, onUpdate }: UserDetailsPr
     fetchUser();
   }, [fetchUser]);
 
-  const handleUpdateUser = async (data: any) => {
+  const handleUpdateUser = async (data: Partial<Pick<UserData, 'name' | 'phone' | 'role' | 'membershipTier'>>) => {
     if (!userId) return;
     setIsUpdating(true);
     try {
@@ -204,8 +222,8 @@ export default function UserDetails({ userId, onClose, onUpdate }: UserDetailsPr
                     <h4 className="text-xs font-black uppercase tracking-widest text-zinc-400 flex items-center gap-2">
                        <History className="w-4 h-4" /> Recent Booking History
                     </h4>
-                    <div className="space-y-3">
-                       {user.bookings.map((b: any) => (
+                     <div className="space-y-3">
+                        {user.bookings?.map((b) => (
                           <div key={b.id} className="p-4 bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl flex items-center justify-between">
                              <div className="flex items-center gap-3">
                                 <div className="p-2 bg-white dark:bg-zinc-800 rounded-xl">
@@ -249,7 +267,7 @@ export default function UserDetails({ userId, onClose, onUpdate }: UserDetailsPr
   );
 }
 
-function DetailField({ icon: Icon, label, value }: { icon: any, label: string, value: string }) {
+function DetailField({ icon: Icon, label, value }: { icon: React.ComponentType<{ className?: string }>, label: string, value: string }) {
    return (
       <div className="flex items-start gap-4">
          <div className="p-2 bg-white dark:bg-zinc-800 rounded-xl shadow-sm">
@@ -263,7 +281,7 @@ function DetailField({ icon: Icon, label, value }: { icon: any, label: string, v
    );
 }
 
-function StatCard({ icon: Icon, label, value }: { icon: any, label: string, value: number }) {
+function StatCard({ icon: Icon, label, value }: { icon: React.ComponentType<{ className?: string }>, label: string, value: number }) {
    return (
       <div className="p-6 bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[32px] space-y-2">
          <div className="w-10 h-10 bg-white dark:bg-zinc-800 rounded-xl flex items-center justify-center shadow-sm">

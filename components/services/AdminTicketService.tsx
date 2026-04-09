@@ -1,7 +1,7 @@
 import useSWR from 'swr';
 import apiService from './apiService/apiService';
 
-async function fetchAll(filters?: Record<string, any>) {
+async function fetchAll(filters?: Record<string, string | number | boolean>) {
   const qs = filters
     ? `?${Object.entries(filters)
         .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
@@ -26,7 +26,7 @@ async function validateTicket(id: string) {
 }
 
 const AdminTicketService = {
-  FetchAll: (filters?: Record<string, any>) => useSWR(['/api/admin/tickets', filters], () => fetchAll(filters)),
+  FetchAll: (filters?: Record<string, string | number | boolean>) => useSWR(['/api/admin/tickets', filters], () => fetchAll(filters)),
   FetchById: (id?: string) => useSWR(id ? `/api/admin/tickets/${id}` : null, () => fetchById(id as string)),
   ValidateTicket: async (id: string) => validateTicket(id),
 };

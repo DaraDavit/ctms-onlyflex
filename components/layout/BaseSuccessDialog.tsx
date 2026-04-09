@@ -20,27 +20,28 @@ export default function BaseSuccessDialog({
   className = "",
   durationMs = 3000,
 }: BaseSuccessDialogProps) {
-  const [visible, setVisible] = useState(open);
-  const [animationKey, setAnimationKey] = useState(0);
+  const [mounted, setMounted] = useState(false);
+  const [key, setKey] = useState(0);
 
   useEffect(() => {
-    setVisible(open);
+    setMounted(true);
+  }, []);
 
-    if (!open) {
+  useEffect(() => {
+    if (!open || !mounted) {
       return;
     }
 
-    setAnimationKey((current) => current + 1);
+    setKey((k) => k + 1);
 
     const timeoutId = window.setTimeout(() => {
-      setVisible(false);
       onClose?.();
     }, durationMs);
 
     return () => window.clearTimeout(timeoutId);
-  }, [durationMs, message, onClose, open, title]);
+  }, [open, durationMs, onClose, mounted]);
 
-  if (!open || !visible) {
+  if (!open) {
     return null;
   }
 
@@ -48,7 +49,7 @@ export default function BaseSuccessDialog({
     <div
       className={`fixed left-1/2 top-5 z-[100] flex w-[min(92vw,38rem)] -translate-x-1/2 items-center gap-4 overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-900 px-5 py-4 text-white shadow-[0_12px_32px_rgba(0,0,0,0.28)] ${className}`}
       role="alert"
-      aria-live="polite"
+      aria-live="assertive"
     >
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500">
         <Check className="h-5 w-5 text-white" />
@@ -63,7 +64,6 @@ export default function BaseSuccessDialog({
         <button
           type="button"
           onClick={() => {
-            setVisible(false);
             onClose?.();
           }}
           className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-zinc-300 transition-colors hover:bg-zinc-800 hover:text-white"
@@ -75,7 +75,7 @@ export default function BaseSuccessDialog({
 
       <div className="absolute inset-x-0 bottom-0 h-1 bg-zinc-800">
         <div
-          key={animationKey}
+          key={key}
           className="h-full w-full origin-right bg-emerald-400"
           style={{
             animation: `success-dialog-timer ${durationMs}ms linear forwards`,

@@ -12,6 +12,21 @@ type FetchAllParams = {
   sortOrder?: string;
 };
 
+interface CreateBookingData {
+  showtimeId: string;
+  customerDetails: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+  };
+  tickets: { seatId: string; price: number }[];
+}
+
+interface UpdateBookingData {
+  status?: string;
+}
+
 const BookingService = {
   // Fetch all bookings with optional params
   FetchAll: (params: FetchAllParams = {}) => {
@@ -39,7 +54,7 @@ const BookingService = {
   },
 
   // Create a new booking
-  create: async (data: any) => {
+  create: async (data: CreateBookingData) => {
     try {
       const response = await apiService(path, {
         method: "POST",
@@ -52,7 +67,7 @@ const BookingService = {
   },
 
   // Update a booking by id
-  update: async (id: string, data: any) => {
+  update: async (id: string, data: UpdateBookingData) => {
     try {
       const response = await apiService(`${path}${id}`, {
         method: "PUT",

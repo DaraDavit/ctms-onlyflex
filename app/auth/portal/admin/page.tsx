@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import Background from "@/components/layout/Background";
 import LoginForm from "./LoginForm";
 
@@ -25,9 +26,9 @@ export default async function AdminLoginPage({ searchParams }: PageProps) {
             </p>
           </div>
           <div className="text-center">
-            <a href="/" className="text-sm text-white/60 hover:text-white transition-colors">
+            <Link href="/" className="text-sm text-white/60 hover:text-white transition-colors">
               ← Back to main site
-            </a>
+            </Link>
           </div>
         </div>
       </div>

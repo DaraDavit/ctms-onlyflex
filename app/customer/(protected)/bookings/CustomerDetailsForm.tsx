@@ -30,7 +30,7 @@ export function CustomerDetailsForm({ details, onChange }: CustomerDetailsFormPr
 
   const handleChange = (field: keyof CustomerDetails, value: string | boolean) => {
     onChange({ ...details, [field]: value });
-    trigger(field as any);
+    trigger(field);
   };
 
   return (

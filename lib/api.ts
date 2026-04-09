@@ -1,5 +1,11 @@
 // Copied from CTMS-Project/lib/api.ts
 
+export interface Showtime {
+  id: string;
+  showtime: string;
+  hallId: string;
+}
+
 export interface Movie {
   id: string;
   movie_id: number;
@@ -14,7 +20,7 @@ export interface Movie {
   created_at: string;
   releaseDate: string;
   endDate: string;
-  showtimes: any[];
+  showtimes: Showtime[];
   showtimes_list?: string[];
   seatConfig: SeatRow[];
   seat_config?: SeatRow[];
@@ -38,7 +44,20 @@ export const defaultSeatConfig: SeatRow[] = [
 
 export const defaultShowtimes = ["10:00", "14:00", "18:00", "22:00"];
 
-export function transformMovie(dbMovie: any): Movie {
+interface DbMovie {
+  movie_id: number;
+  title: string;
+  description: string | null;
+  poster_url: string | null;
+  duration: number;
+  genre: string;
+  rating: number;
+  created_at: string;
+  release_date: string | null;
+  end_date: string | null;
+}
+
+export function transformMovie(dbMovie: DbMovie): Movie {
   return {
     id: `movie-${dbMovie.movie_id}`,
     movie_id: dbMovie.movie_id,
@@ -66,8 +85,19 @@ export async function getMoviesAPI(): Promise<Movie[]> {
   return [];
 }
 
+export interface Booking {
+  id: string;
+  bookingId: string;
+  movieTitle: string;
+  showtime: string;
+  seats: string[];
+  totalPrice: number;
+  status: string;
+  createdAt: string;
+}
+
 // Stub for getUserBookingsAPI
-export async function getUserBookingsAPI(): Promise<any[]> {
+export async function getUserBookingsAPI(): Promise<Booking[]> {
   // TODO: Replace with real API call
   return [];
 }

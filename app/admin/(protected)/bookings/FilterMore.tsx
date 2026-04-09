@@ -10,7 +10,7 @@ interface FilterMoreProps {
     movieId: string;
     hallId: string;
   };
-  setFilters: (filters: any) => void;
+  setFilters: React.Dispatch<React.SetStateAction<{ dateFrom: string; dateTo: string; movieId: string; hallId: string }>>;
   onClear: () => void;
 }
 
@@ -43,7 +43,7 @@ export function FilterMore({ filters, setFilters, onClear }: FilterMoreProps) {
   }, []);
 
   const handleChange = (name: string, value: string) => {
-    setFilters((prev: any) => ({ ...prev, [name]: value }));
+    setFilters((prev: { dateFrom: string; dateTo: string; movieId: string; hallId: string }) => ({ ...prev, [name]: value }));
   };
 
   return (

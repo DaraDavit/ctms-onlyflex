@@ -1,10 +1,15 @@
 import Cookies from "js-cookie";
 
-type ApiResponse<T = any> = {
+type ApiError = {
+  message: string;
+  code?: string;
+};
+
+type ApiResponse<T = unknown> = {
   success: boolean;
   status: number;
   data: T;
-  errors: any;
+  errors: ApiError | null;
 };
 
 const apiService = async (

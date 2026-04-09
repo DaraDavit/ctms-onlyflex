@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Background from "@/components/layout/Background";
 
 export default function LoginForm() {
@@ -111,9 +112,9 @@ export default function LoginForm() {
           </button>
 
           <div className="text-center">
-            <a href="/" className="text-sm text-white/60 hover:text-white transition-colors">
+            <Link href="/" className="text-sm text-white/60 hover:text-white transition-colors">
               ← Back to main site
-            </a>
+            </Link>
           </div>
         </form>
       </div>

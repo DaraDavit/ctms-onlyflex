@@ -3,6 +3,10 @@ import { auth } from "@/auth";
 import { Prisma, PrismaClient } from "@/app/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
+import bcrypt from "bcryptjs";
+
+type Role = "USER" | "ADMIN" | "MANAGER" | "FRONT_DESK";
+type MembershipTier = "NONE" | "MEMBER";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -35,11 +39,11 @@ export async function GET(request: NextRequest) {
     }
 
     if (role) {
-      where.role = role as any;
+      where.role = role as Role;
     }
 
     if (tier) {
-      where.membershipTier = tier as any;
+      where.membershipTier = tier as MembershipTier;
     }
 
     const skip = (page - 1) * limit;
@@ -116,7 +120,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const bcrypt = require("bcryptjs");
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await prisma.user.create({

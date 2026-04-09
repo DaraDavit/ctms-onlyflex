@@ -138,11 +138,11 @@ export default function BookingForm({ isOpen, onClose, onSuccess }: BookingFormP
         const bookingsData = await bookingsRes.json();
         const bookedSeatIds = new Set<string>();
         
-        bookingsData.bookings?.forEach((b: any) => {
-           b.tickets?.forEach((t: any) => {
-              if (t.seat?.id) bookedSeatIds.add(t.seat.id);
-           });
-        });
+        bookingsData.bookings?.forEach((b: { tickets?: { seat?: { id?: string } }[] }) => {
+           b.tickets?.forEach((t: { seat?: { id?: string } }) => {
+               if (t.seat?.id) bookedSeatIds.add(t.seat.id);
+            });
+         });
 
         // Mark seats as booked
         hallSeats = hallSeats.map(s => ({
@@ -353,8 +353,8 @@ export default function BookingForm({ isOpen, onClose, onSuccess }: BookingFormP
       setBookedId(finalBooking.id);
       setStep("success");
       onSuccess();
-    } catch (err: any) {
-      setError(err.message || "An error occurred");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setIsLoading(false);
     }
