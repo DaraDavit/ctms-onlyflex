@@ -6,9 +6,9 @@ import { AuthScreen } from "@/components/auth/AuthScreen";
 
 function LoginContent() {
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/customer/bookings";
+  const callbackUrl = searchParams.get("redirect") || searchParams.get("callbackUrl") || "/";
 
-  return <AuthScreen initialTab="login" callbackUrl={callbackUrl} />;
+  return <AuthScreen initialTab="signin" callbackUrl={callbackUrl} />;
 }
 
 export default function LoginPage() {

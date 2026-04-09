@@ -4,7 +4,6 @@ import { Suspense, useDeferredValue, useEffect, useMemo, useRef, useState } from
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, X } from "lucide-react";
 import CustomerMovieService from "@/components/services/CustomerMovieService";
-import { ImageWithFallback } from "@/app/sample_app/src/components/figma/ImageWithFallback";
 
 type CustomerMovieSearchProps = {
   mobile?: boolean;
@@ -139,7 +138,7 @@ function CustomerMovieSearchContent({
                       className="flex w-full items-start gap-4 rounded-xl border border-zinc-700/60 bg-zinc-950/40 px-2 py-3 text-left transition-all hover:bg-zinc-950"
                     >
                       <div className="h-28 w-20 shrink-0 overflow-hidden rounded-lg bg-zinc-900">
-                        <ImageWithFallback
+                        <img
                           src={movie.image}
                           alt={movie.title}
                           className="h-full w-full object-cover"
@@ -216,7 +215,7 @@ function CustomerMovieSearchContent({
                     className="flex w-full items-start gap-4 rounded-xl border border-zinc-700/60 bg-zinc-950/40 p-4 text-left transition-all hover:bg-zinc-950"
                   >
                     <div className="h-24 w-16 shrink-0 overflow-hidden rounded-lg bg-zinc-900">
-                      <ImageWithFallback
+                      <img
                         src={movie.image}
                         alt={movie.title}
                         className="h-full w-full object-cover"

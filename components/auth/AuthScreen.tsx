@@ -21,7 +21,7 @@ import { Input } from "@/components/ui/Input";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Tabs } from "@/components/ui/Tabs";
 
-type AuthTab = "login" | "register";
+type AuthTab = "signin" | "register";
 type LoginMode = "email" | "phone";
 
 interface AuthScreenProps {
@@ -62,6 +62,18 @@ export function AuthScreen({ initialTab, callbackUrl }: AuthScreenProps) {
     setActiveTab(initialTab);
   }, [initialTab]);
 
+  const safeRedirect = useMemo(() => {
+    if (!callbackUrl) {
+      return "/";
+    }
+
+    try {
+      return decodeURIComponent(callbackUrl);
+    } catch {
+      return callbackUrl;
+    }
+  }, [callbackUrl]);
+
   const loginValid = loginIdentifier.trim().length > 0 && loginPassword.trim().length > 0;
   const registerValid =
     fullName.trim().length > 0 &&
@@ -72,7 +84,7 @@ export function AuthScreen({ initialTab, callbackUrl }: AuthScreenProps) {
 
   const loginTabItems = useMemo(
     () => [
-      { value: "login", label: "Log In" },
+      { value: "signin", label: "Sign In" },
       { value: "register", label: "Sign Up" },
     ],
     [],
@@ -83,9 +95,9 @@ export function AuthScreen({ initialTab, callbackUrl }: AuthScreenProps) {
     setLoginError("");
     setRegisterError("");
 
-    const nextPath = tab === "login" ? "/login" : "/register";
-    const nextUrl = callbackUrl
-      ? `${nextPath}?callbackUrl=${encodeURIComponent(callbackUrl)}`
+    const nextPath = tab === "signin" ? "/login" : "/register";
+    const nextUrl = safeRedirect !== "/"
+      ? `${nextPath}?redirect=${encodeURIComponent(safeRedirect)}`
       : nextPath;
 
     router.replace(nextUrl);
@@ -99,8 +111,7 @@ export function AuthScreen({ initialTab, callbackUrl }: AuthScreenProps) {
     try {
       const identifier = loginMode === "phone" ? normalizePhone(loginIdentifier) : loginIdentifier.trim();
       await login(identifier, loginPassword);
-      router.refresh();
-      router.push(callbackUrl);
+      window.location.replace(safeRedirect);
     } catch (error) {
       setLoginError(error instanceof Error ? error.message : "An error occurred. Please try again.");
     } finally {
@@ -154,12 +165,11 @@ export function AuthScreen({ initialTab, callbackUrl }: AuthScreenProps) {
 
       if (result?.error) {
         setRegisterError("Account created but sign in failed. Please log in manually.");
-        goToTab("login");
+        goToTab("signin");
         return;
       }
 
-      router.refresh();
-      router.push(callbackUrl);
+      window.location.replace(safeRedirect);
     } catch (error) {
       setRegisterError(
         error instanceof Error ? error.message : "An error occurred. Please try again.",
@@ -205,7 +215,7 @@ export function AuthScreen({ initialTab, callbackUrl }: AuthScreenProps) {
             <div className="w-full max-w-lg">
               <Link
                 href="/"
-                className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-red-500 transition-colors hover:text-zinc-200"
+                className="mb-6 inline-flex items-center gap-2 text-md font-medium text-red-500 transition-colors hover:text-zinc-200"
               >
                 <ArrowLeft className="h-4 w-4" />
                 Back to Home
@@ -216,10 +226,10 @@ export function AuthScreen({ initialTab, callbackUrl }: AuthScreenProps) {
                   Welcome to OnlyFlex
                 </p>
                 <h2 className="text-3xl font-bold text-white sm:text-4xl">
-                  {activeTab === "login" ? "Log in to continue" : "Create your account"}
+                  {activeTab === "signin" ? "Sign in to continue" : "Create your account"}
                 </h2>
                 <p className="max-w-lg text-sm leading-6 text-zinc-400">
-                  {activeTab === "login"
+                  {activeTab === "signin"
                     ? "Pick a sign-in method, enter your details, and jump back into your tickets."
                     : "Create your profile and start booking without losing the cinematic feel."}
                 </p>
@@ -243,7 +253,7 @@ export function AuthScreen({ initialTab, callbackUrl }: AuthScreenProps) {
                 />
               </div>
 
-              {activeTab === "login" ? (
+              {activeTab === "signin" ? (
                 <form className="mt-8 space-y-5" onSubmit={handleLoginSubmit}>
                   {loginError ? (
                     <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">

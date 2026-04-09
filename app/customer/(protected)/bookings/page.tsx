@@ -13,8 +13,14 @@ import { ButtonRed } from '@/components/ui/ButtonRed';
 import ButtonGray from '@/components/ui/ButtonGray';
 import BaseSuccessDialog from '@/components/layout/BaseSuccessDialog';
 import BaseWarningDialog from '@/components/layout/BaseWarningDialog';
-import { LoginForm } from '@/components/auth/LoginForm';
 import { useAuth } from '@/contexts/AuthContext';
+import {
+  buildLoginRedirectUrl,
+  clearBookingDraft,
+  getBookingShowtimeKey,
+  loadBookingDraft,
+  saveBookingDraft,
+} from '@/lib/booking-draft';
 
 const generateSeats = (): Seat[] => {
   const rows = 8;
@@ -59,7 +65,7 @@ interface BookingContentProps {
 function BookingContent({ showtime, onBack }: BookingContentProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedSeats, setSelectedSeats] = useState<Set<string>>(new Set());
   const seats = useMemo(() => generateSeats(), []);
@@ -79,6 +85,8 @@ function BookingContent({ showtime, onBack }: BookingContentProps) {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [warningMessage, setWarningMessage] = useState('');
   const [showWarning, setShowWarning] = useState(false);
+  const [draftHydrated, setDraftHydrated] = useState(false);
+  const [restoredShowtime, setRestoredShowtime] = useState<MovieShowtime | null>(null);
 
   const showWarningDialog = (message: string) => {
     setWarningMessage(message);
@@ -86,14 +94,50 @@ function BookingContent({ showtime, onBack }: BookingContentProps) {
   };
 
   const currentShowtime: MovieShowtime = useMemo(() => ({
-    id: searchParams.get('showtimeId') || showtime?.id || '',
-    movieTitle: searchParams.get('movie') || showtime?.movieTitle || 'The Dark Knight Returns',
-    date: searchParams.get('date') || showtime?.date || 'March 20, 2026',
-    time: searchParams.get('time') || showtime?.time || '7:30 PM',
-    location: searchParams.get('location') || showtime?.location || 'Downtown Cinema',
-    screen: searchParams.get('screen') || showtime?.screen || 'Screen 2',
-    type: searchParams.get('type') || showtime?.type || 'IMAX',
-  }), [searchParams, showtime]);
+    id: searchParams.get('showtimeId') || restoredShowtime?.id || showtime?.id || '',
+    movieTitle: searchParams.get('movie') || restoredShowtime?.movieTitle || showtime?.movieTitle || 'The Dark Knight Returns',
+    date: searchParams.get('date') || restoredShowtime?.date || showtime?.date || 'March 20, 2026',
+    time: searchParams.get('time') || restoredShowtime?.time || showtime?.time || '7:30 PM',
+    location: searchParams.get('location') || restoredShowtime?.location || showtime?.location || 'Downtown Cinema',
+    screen: searchParams.get('screen') || restoredShowtime?.screen || showtime?.screen || 'Screen 2',
+    type: searchParams.get('type') || restoredShowtime?.type || showtime?.type || 'IMAX',
+  }), [restoredShowtime, searchParams, showtime]);
+  const currentShowtimeKey = useMemo(() => getBookingShowtimeKey(currentShowtime), [currentShowtime]);
+  const currentBookingUrl = useMemo(() => {
+    if (!currentShowtime.id) {
+      return '/customer/bookings';
+    }
+
+    return `/customer/bookings?showtimeId=${encodeURIComponent(currentShowtime.id)}`;
+  }, [currentShowtime.id]);
+
+  useEffect(() => {
+    const draft = loadBookingDraft(currentShowtimeKey);
+    if (draft) {
+      setRestoredShowtime(draft.showtime);
+      setCurrentStep(draft.currentStep);
+      setSelectedSeats(new Set(draft.selectedSeats));
+      setCustomerDetails(draft.customerDetails);
+      setPaymentMethod(draft.paymentMethod);
+    }
+
+    setDraftHydrated(true);
+  }, [currentShowtimeKey]);
+
+  useEffect(() => {
+    if (!draftHydrated) {
+      return;
+    }
+
+    saveBookingDraft({
+      showtimeKey: currentShowtimeKey,
+      showtime: currentShowtime,
+      currentStep,
+      selectedSeats: Array.from(selectedSeats),
+      customerDetails,
+      paymentMethod,
+    });
+  }, [draftHydrated, currentShowtime, currentShowtimeKey, currentStep, selectedSeats, customerDetails, paymentMethod]);
 
   useEffect(() => {
     if (!isAuthenticated || !user) return;
@@ -142,7 +186,15 @@ function BookingContent({ showtime, onBack }: BookingContentProps) {
 
     if (currentStep === 2) {
       if (!isAuthenticated) {
-        showWarningDialog("Please sign in to continue your booking");
+        saveBookingDraft({
+          showtimeKey: currentShowtimeKey,
+          showtime: currentShowtime,
+          currentStep: 2,
+          selectedSeats: Array.from(selectedSeats),
+          customerDetails,
+          paymentMethod,
+        });
+        router.push(buildLoginRedirectUrl(currentBookingUrl));
         return;
       }
       if (!customerDetails.firstName || !customerDetails.lastName || !customerDetails.email || !customerDetails.phone) {
@@ -210,6 +262,7 @@ function BookingContent({ showtime, onBack }: BookingContentProps) {
         throw new Error(result?.error || 'Failed to complete booking');
       }
 
+      clearBookingDraft();
       setBookingId(result.id);
       setShowSuccessDialog(true);
       setCurrentStep(4);
@@ -248,12 +301,6 @@ function BookingContent({ showtime, onBack }: BookingContentProps) {
       {/* Main content */}
       <div className="px-4 py-8">
         <div className="max-w-6xl mx-auto">
-          {!isLoading && !isAuthenticated && currentStep === 2 && (
-            <div className="mb-8">
-              <LoginForm redirectTo={`/customer/bookings?showtimeId=${currentShowtime.id}&movie=${currentShowtime.movieTitle}&date=${currentShowtime.date}&time=${currentShowtime.time}&location=${currentShowtime.location}&screen=${currentShowtime.screen}&type=${currentShowtime.type}`} />
-            </div>
-          )}
-
           {currentStep === 1 && (
             <div>
               <h2 className="text-2xl font-bold mb-4">Select Your Seats</h2>

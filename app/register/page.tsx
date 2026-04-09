@@ -1,15 +1,12 @@
 "use client";
 
-import { Suspense, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { signIn } from "next-auth/react";
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { AuthScreen } from "@/components/auth/AuthScreen";
 
 function RegisterContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/customer/bookings";
+  const callbackUrl = searchParams.get("redirect") || searchParams.get("callbackUrl") || "/";
 
   return <AuthScreen initialTab="register" callbackUrl={callbackUrl} />;
 }

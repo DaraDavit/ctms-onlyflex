@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { PrismaClient, Prisma } from "@/app/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
+import { getMovieRatingSummaries } from "@/lib/rating-service";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -80,8 +81,19 @@ export async function GET(request: NextRequest) {
       prisma.movie.count({ where }),
     ]);
 
+    const ratingSummaries = await getMovieRatingSummaries(
+      prisma,
+      movies.map((movie) => movie.id),
+    );
+
     return NextResponse.json({
-      movies,
+      movies: movies.map((movie) => ({
+        ...movie,
+        ...(ratingSummaries.get(movie.id) ?? {
+          averageRating: null,
+          reviewCount: 0,
+        }),
+      })),
       pagination: {
         page,
         limit,

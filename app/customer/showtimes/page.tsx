@@ -3,10 +3,14 @@
 import { Calendar, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import CustomerMovieService, {
   type CustomerMovie,
   type CustomerMovieShowtime,
 } from '@/components/services/CustomerMovieService';
+import MovieRatingBadge from '@/components/ui/MovieRatingBadge';
+import { buildLoginRedirectUrl, saveBookingDraft } from '@/lib/booking-draft';
+import { getBookingHref } from '@/lib/movie-availability';
 
 type DateOption = {
   value: string;
@@ -18,6 +22,10 @@ type DateOption = {
 
 type MovieWithTimes = CustomerMovie & {
   times: CustomerMovieShowtime[];
+};
+
+type DateSlot = DateOption & {
+  isPlaceholder?: boolean;
 };
 
 const dayOfWeekFormatter = new Intl.DateTimeFormat('en-US', {
@@ -60,6 +68,7 @@ interface ShowtimesPageProps {
 
 export function ShowtimesPage({ onBookingClick }: ShowtimesPageProps) {
   const router = useRouter();
+  const { isAuthenticated } = useAuth();
   const [selectedDate, setSelectedDate] = useState<DateOption | null>(null);
   const [showtimePageByMovie, setShowtimePageByMovie] = useState<Record<string, number>>({});
   const { data, error, isLoading } = CustomerMovieService.FetchAll();
@@ -112,6 +121,25 @@ export function ShowtimesPage({ onBookingClick }: ShowtimesPageProps) {
     return days;
   }, [data?.movies]);
 
+  const dateSlots = useMemo<DateSlot[]>(() => {
+    const slots: DateSlot[] = dates.map((date) => ({
+      ...date,
+      isPlaceholder: false,
+    }));
+
+    while (slots.length < 7) {
+      slots.push({
+        value: `placeholder-${slots.length}`,
+        label: "",
+        dayOfWeek: "",
+        date: "",
+        isPlaceholder: true,
+      });
+    }
+
+    return slots;
+  }, [dates]);
+
   // Initialize selected date when dates are available
   useEffect(() => {
     if (!selectedDate && dates.length > 0) {
@@ -144,16 +172,50 @@ export function ShowtimesPage({ onBookingClick }: ShowtimesPageProps) {
   }, [data?.movies, selectedDate, currentTime, todayKey]);
 
   const handleBookShowtime = (
-    movieTitle: string,
-    slot: { id: string; time: string; screen: string; type: string }
+    movie: MovieWithTimes,
+    slot: CustomerMovieShowtime,
   ) => {
+    const bookingHref = getBookingHref(movie, slot);
+
     if (onBookingClick) {
       onBookingClick();
     }
 
-    router.push(
-      `/customer/bookings?showtimeId=${encodeURIComponent(slot.id)}&movie=${encodeURIComponent(movieTitle)}&time=${encodeURIComponent(slot.time)}&screen=${encodeURIComponent(slot.screen)}&type=${encodeURIComponent(slot.type)}`
-    );
+    if (isAuthenticated) {
+      router.push(bookingHref);
+      return;
+    }
+
+    saveBookingDraft({
+      showtimeKey: slot.id,
+      showtime: {
+        id: slot.id,
+        movieTitle: movie.title,
+        date: new Intl.DateTimeFormat("en-US", {
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+        }).format(new Date(slot.startTime)),
+        time: slot.time,
+        location: "Downtown Cinema",
+        screen: slot.screen,
+        type: slot.type,
+      },
+      currentStep: 1,
+      selectedSeats: [],
+      customerDetails: {
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        sendConfirmationSms: false,
+        sendConfirmationEmail: true,
+        subscribeToPromotionalOffers: false,
+      },
+      paymentMethod: "",
+    });
+
+    router.push(buildLoginRedirectUrl(bookingHref));
   };
 
   return (
@@ -175,28 +237,39 @@ export function ShowtimesPage({ onBookingClick }: ShowtimesPageProps) {
               <Calendar className="w-4 h-4" />
               Select Date
             </label>
-            {/* Full-width grid that divides equally among available dates */}
+            {/* Keep a fixed 7-column grid so each date stays the same width */}
             <div
               className="grid w-full gap-2"
-              style={{ gridTemplateColumns: `repeat(${dates.length}, minmax(0, 1fr))` }}
+              style={{ gridTemplateColumns: "repeat(7, minmax(0, 1fr))" }}
             >
-              {dates.map((date, index) => (
-                <button
-                  key={index}
-                  onClick={() => setSelectedDate(date)}
-                  className={`w-full px-2 py-3 rounded-lg focus:outline-none cursor-pointer ${
-                    selectedDate?.value === date.value
-                      ? 'bg-gradient-to-r from-red-500 to-red-700 text-white shadow-lg shadow-red-500/30'
-                      : 'bg-zinc-950 border border-zinc-800 hover:border-zinc-700'
-                  }`}
-                >
-                  <p className="text-xs font-medium mb-1">{date.dayOfWeek}</p>
-                  <p className="font-bold text-sm truncate">
-                    {date.label === 'Today' || date.label === 'Tomorrow'
-                      ? date.label
-                      : date.date}
-                  </p>
-                </button>
+              {dateSlots.map((date) => (
+                date.isPlaceholder ? (
+                  <div
+                    key={date.value}
+                    className="invisible w-full px-2 py-3 rounded-lg border border-transparent"
+                    aria-hidden="true"
+                  >
+                    <p className="text-xs font-medium mb-1">&nbsp;</p>
+                    <p className="font-bold text-sm truncate">&nbsp;</p>
+                  </div>
+                ) : (
+                  <button
+                    key={date.value}
+                    onClick={() => setSelectedDate(date)}
+                    className={`w-full px-2 py-3 rounded-lg focus:outline-none cursor-pointer ${
+                      selectedDate?.value === date.value
+                        ? 'bg-gradient-to-r from-red-500 to-red-700 text-white shadow-lg shadow-red-500/30'
+                        : 'bg-zinc-950 border border-zinc-800 hover:border-zinc-700'
+                    }`}
+                  >
+                    <p className="text-xs font-medium mb-1">{date.dayOfWeek}</p>
+                    <p className="font-bold text-sm truncate">
+                      {date.label === 'Today' || date.label === 'Tomorrow'
+                        ? date.label
+                        : date.date}
+                    </p>
+                  </button>
+                )
               ))}
             </div>
           </div>
@@ -223,21 +296,7 @@ export function ShowtimesPage({ onBookingClick }: ShowtimesPageProps) {
           </div>
         ) : (
           <div className="space-y-6">
-            {showtimes.map((show: {
-              image: string;
-              title: string;
-              genre: string;
-              duration: string;
-              certification: string;
-              rating: number;
-              times: {
-                id: string;
-                time: string;
-                screen: string;
-                type: string;
-                availableSeats: number;
-              }[];
-            }, index: number) => (
+            {showtimes.map((show: MovieWithTimes, index: number) => (
               <div
                 key={index}
                 className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden hover:border-zinc-700 transition-all"
@@ -265,7 +324,11 @@ export function ShowtimesPage({ onBookingClick }: ShowtimesPageProps) {
                         <span className="px-2 py-1 bg-zinc-800 border border-zinc-700 rounded text-xs">
                           {show.certification}
                         </span>
-                        <span className="text-yellow-500 text-sm font-medium">★ {show.rating}</span>
+                        <MovieRatingBadge
+                          averageRating={show.averageRating}
+                          reviewCount={show.reviewCount}
+                          className="text-sm"
+                        />
                       </div>
                     </div>
                   </div>
@@ -312,16 +375,10 @@ export function ShowtimesPage({ onBookingClick }: ShowtimesPageProps) {
                                   className="w-full flex-shrink-0"
                                 >
                                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                                    {pageTimes.map((slot: {
-                                      id: string;
-                                      time: string;
-                                      screen: string;
-                                      type: string;
-                                      availableSeats: number;
-                                    }) => (
+                                    {pageTimes.map((slot: CustomerMovieShowtime) => (
                                       <button
                                         key={slot.id}
-                                        onClick={() => handleBookShowtime(show.title, slot)}
+                                        onClick={() => handleBookShowtime(show, slot)}
                                         className="group cursor-pointer bg-zinc-950 border border-zinc-800 hover:border-red-500 rounded-xl p-4 transition-all hover:shadow-lg hover:shadow-red-500/20"
                                       >
                                         <div className="flex items-center justify-between mb-2">

@@ -127,20 +127,9 @@ export function getMovieAvailabilityState(
   return "expired";
 }
 
-export function getBookingHref(movie: CustomerMovie, showtime: CustomerMovieShowtime) {
-  const date = new Intl.DateTimeFormat("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date(showtime.startTime));
-
+export function getBookingHref(_movie: CustomerMovie, showtime: CustomerMovieShowtime) {
   const params = new URLSearchParams({
     showtimeId: showtime.id,
-    movie: movie.title,
-    date,
-    time: showtime.time,
-    screen: showtime.screen,
-    type: showtime.type,
   });
 
   return `/customer/bookings?${params.toString()}`;

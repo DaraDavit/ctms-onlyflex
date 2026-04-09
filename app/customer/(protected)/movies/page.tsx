@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import BaseMovieCard from "@/components/layout/BaseMovieCard";
 import CustomerMovieService from "@/components/services/CustomerMovieService";
@@ -15,7 +15,6 @@ const sortOptions = [
 ];
 
 function MoviesContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGenre, setSelectedGenre] = useState("All Genres");
@@ -32,11 +31,6 @@ function MoviesContent() {
   }, [searchParams]);
 
   const genreOptions: Array<{ value: string; label: string }> = useMemo(() => {
-    interface GenreOption {
-      value: string;
-      label: string;
-    }
-
     const uniqueGenres: string[] = Array.from(
       new Set<string>(
         movies.flatMap((movie: { genres: string[] }) =>
@@ -245,11 +239,6 @@ function MoviesContent() {
                 key={movie.id}
                 movie={movie}
                 href={`/customer/movies/view/${movie.id}`}
-                onShowtimeClick={(time) =>
-                  router.push(
-                    `/customer/bookings?movie=${encodeURIComponent(movie.title)}&time=${encodeURIComponent(time)}`
-                  )
-                }
               />
             ))}
           </div>

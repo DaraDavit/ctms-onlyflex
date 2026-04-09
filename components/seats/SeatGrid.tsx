@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { memo, useState, useCallback } from 'react';
 import { Seat } from '@/types/seat';
 import { SeatCell } from './SeatCell';
 import { ScreenIndicator } from './ScreenIndicator';

@@ -9,7 +9,6 @@ import {
   getMovieAvailabilityState,
   getNowShowingSortTimestamp,
 } from "@/lib/movie-availability";
-import { ImageWithFallback } from "@/app/sample_app/src/components/figma/ImageWithFallback";
 
 export function NowShowing() {
   const [currentTime, setCurrentTime] = useState(() => Date.now());
@@ -116,28 +115,41 @@ export function NowShowing() {
               const detailsHref = movie.id
                 ? `/customer/movies/view/${movie.id}`
                 : "/customer/movies";
+              const cardHref = detailsHref;
+              const posterContent = (
+                <>
+                  <img
+                    src={movie.image || "/placeholder.png"}
+                    alt={movie.title}
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+                </>
+              );
 
               return (
                 <article
                   key={movie.id}
                   className="group relative overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 transition-all hover:-translate-y-2 hover:border-red-500/50 hover:shadow-2xl hover:shadow-red-500/20"
                 >
-                  <Link
-                    href={detailsHref}
-                    className="relative block aspect-[3/4] overflow-hidden"
-                  >
-                    <ImageWithFallback
-                      src={movie.image || "/placeholder.png"}
-                      alt={movie.title}
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    />
-                  </Link>
+                  {cardHref ? (
+                    <Link
+                      href={cardHref}
+                      className="relative block aspect-[3/4] overflow-hidden"
+                    >
+                      {posterContent}
+                    </Link>
+                  ) : (
+                    <div className="relative aspect-[3/4] overflow-hidden">
+                      {posterContent}
+                    </div>
+                  )}
 
                   <div className="p-5">
                     <h3 className="mb-2 text-lg font-bold transition-colors group-hover:text-red-500">
                       {movie.title}
                     </h3>
-                    <p className="mb-4 text-sm text-zinc-400">
+                    <p className=" text-md text-zinc-400">
                       {movie.releaseDate}
                     </p>
                   </div>

@@ -18,8 +18,11 @@ import ButtonGray from "@/components/ui/ButtonGray";
 import CustomerMovieService from "@/components/services/CustomerMovieService";
 import RatingMovie from "@/app/customer/(protected)/movies/RatingMovie";
 import { isFavoriteMovie, toggleFavoriteMovie } from "@/lib/favorite-movies";
+import MovieRatingBadge from "@/components/ui/MovieRatingBadge";
+import { useAuth } from "@/contexts/AuthContext";
+import { buildLoginRedirectUrl, saveBookingDraft } from "@/lib/booking-draft";
+import { getBookingHref } from "@/lib/movie-availability";
 
-<<<<<<< HEAD
 type DateOption = {
   value: string;
   label: string;
@@ -56,13 +59,6 @@ function addDays(date: Date, days: number) {
   next.setDate(next.getDate() + days);
   return next;
 }
-=======
-const theaters = [
-  { id: 1, name: "OnlyFlex Central", address: "Norodom Blvd, Phnom Penh" },
-  { id: 2, name: "OnlyFlex Riverside", address: "Sisowath Quay, Phnom Penh" },
-  { id: 3, name: "OnlyFlex Sen Sok", address: "Street 2004, Phnom Penh" },
-];
->>>>>>> 5f7fb2b6ac376862652be3121f7da03e6feec310
 
 export default function MovieDetailPage() {
   const params = useParams<{ id: string }>();
@@ -78,7 +74,8 @@ export default function MovieDetailPage() {
   const [ratingSubmitting, setRatingSubmitting] = useState(false);
   const [ratingError, setRatingError] = useState("");
   const [ratingSuccess, setRatingSuccess] = useState("");
-  const { data: movie, error, isLoading } = CustomerMovieService.FetchById(params.id);
+  const { isAuthenticated } = useAuth();
+  const { data: movie, error, isLoading, mutate } = CustomerMovieService.FetchById(params.id);
 
   useEffect(() => {
     let mounted = true;
@@ -102,6 +99,16 @@ export default function MovieDetailPage() {
         const payload = await response.json();
 
         if (!response.ok) {
+          if (response.status === 401) {
+            if (mounted) {
+              setHasRatedMovie(false);
+              setRatingMessage("Please sign in to save your rating for this movie.");
+              setRatingError("");
+              setIsRatingLoading(false);
+            }
+            return;
+          }
+
           throw new Error(payload?.error || "Failed to load rating status");
         }
 
@@ -278,6 +285,12 @@ export default function MovieDetailPage() {
 
       const payload = await response.json();
       if (!response.ok) {
+        if (response.status === 401) {
+          setRatingMessage("Please sign in to submit your rating.");
+          setRatingError("");
+          return;
+        }
+
         throw new Error(payload?.error || "Failed to save rating");
       }
 
@@ -285,6 +298,7 @@ export default function MovieDetailPage() {
       setHasRatedMovie(true);
       setRatingMessage("You already rated this movie.");
       setShowRatingModal(false);
+      void mutate();
     } catch (submitError) {
       setRatingError(submitError instanceof Error ? submitError.message : "Failed to save rating");
     } finally {
@@ -355,10 +369,11 @@ export default function MovieDetailPage() {
               </h1>
 
               <div className="mb-6 flex flex-wrap items-center gap-5 text-zinc-300">
-                <div className="flex items-center gap-2">
-                  <Star className="h-5 w-5 fill-yellow-500 text-yellow-500" />
-                  <span className="text-lg font-semibold">{movie.rating}/10</span>
-                </div>
+                <MovieRatingBadge
+                  averageRating={movie.averageRating}
+                  reviewCount={movie.reviewCount}
+                  className="text-lg"
+                />
                 <div className="flex items-center gap-2">
                   <Clock className="h-5 w-5" />
                   <span>{movie.duration}</span>
@@ -560,23 +575,65 @@ export default function MovieDetailPage() {
 
                 {selectedDateShowtimes.length > 0 ? (
                   <div className="flex flex-wrap gap-4">
-                    {selectedDateShowtimes.map((showtime) => (
-                      <Link
-                        key={showtime.id}
-                        href={`/customer/bookings?showtimeId=${encodeURIComponent(showtime.id)}&movie=${encodeURIComponent(movie.title)}&time=${encodeURIComponent(showtime.time)}&screen=${encodeURIComponent(showtime.screen)}&type=${encodeURIComponent(showtime.type)}`}
-                        className="min-w-[280px] rounded-2xl border border-zinc-800 bg-black px-4 py-4 transition-all hover:border-red-500"
-                      >
-                        <div className="space-y-2">
-                          <h4 className="text-md font-bold tracking-tight text-white">
-                            {showtime.time}
-                          </h4>
-                          <div className="flex items-center gap-2 text-xs text-zinc-400">
-                            <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                            <span>{showtime.availableSeats} seats left</span>
+                    {selectedDateShowtimes.map((showtime) => {
+                      const bookingHref = getBookingHref(movie, showtime);
+
+                      return (
+                        <Link
+                          key={showtime.id}
+                          href={bookingHref}
+                          onClick={(event) => {
+                            if (isAuthenticated) {
+                              return;
+                            }
+
+                            event.preventDefault();
+
+                            saveBookingDraft({
+                              showtimeKey: showtime.id,
+                              showtime: {
+                                id: showtime.id,
+                                movieTitle: movie.title,
+                                date: new Intl.DateTimeFormat("en-US", {
+                                  month: "long",
+                                  day: "numeric",
+                                  year: "numeric",
+                                }).format(new Date(showtime.startTime)),
+                                time: showtime.time,
+                                location: "Downtown Cinema",
+                                screen: showtime.screen,
+                                type: showtime.type,
+                              },
+                              currentStep: 1,
+                              selectedSeats: [],
+                              customerDetails: {
+                                firstName: "",
+                                lastName: "",
+                                email: "",
+                                phone: "",
+                                sendConfirmationSms: false,
+                                sendConfirmationEmail: true,
+                                subscribeToPromotionalOffers: false,
+                              },
+                              paymentMethod: "",
+                            });
+
+                            router.push(buildLoginRedirectUrl(bookingHref));
+                          }}
+                          className="min-w-[280px] rounded-2xl border border-zinc-800 bg-black px-4 py-4 transition-all hover:border-red-500"
+                        >
+                          <div className="space-y-2">
+                            <h4 className="text-md font-bold tracking-tight text-white">
+                              {showtime.time}
+                            </h4>
+                            <div className="flex items-center gap-2 text-xs text-zinc-400">
+                              <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                              <span>{showtime.availableSeats} seats left</span>
+                            </div>
                           </div>
-                        </div>
-                      </Link>
-                    ))}
+                        </Link>
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-400">
