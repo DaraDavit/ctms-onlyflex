@@ -1,8 +1,11 @@
 "use client";
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { Suspense, useEffect, useMemo, useState } from "react";
 =======
+=======
+>>>>>>> customer
 export const dynamic = "force-dynamic";
 
 import { useEffect, useMemo, useState } from "react";
