@@ -4,7 +4,10 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, Calendar } from "lucide-react";
 import CustomerMovieService from "@/components/services/CustomerMovieService";
-import { ImageWithFallback } from "@/app/sample_app/src/components/figma/ImageWithFallback";
+<<<<<<< HEAD
+=======
+import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
+>>>>>>> e5e1fb5 (fix: resolve build errors from customer merge)
 import { getMovieDetailsHref, isComingSoonMovie } from "@/lib/movie-availability";
 
 export default function ComingSoonPage() {
@@ -95,7 +98,7 @@ export default function ComingSoonPage() {
                 >
                   <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                     <div className="relative aspect-video overflow-hidden md:aspect-auto">
-                      <ImageWithFallback
+                      <img
                         src={movie.image}
                         alt={movie.title}
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"

@@ -21,6 +21,8 @@ type AdminMovie = {
   releaseDate?: string | null;
   duration?: number | null;
   rating?: number | string | null;
+  averageRating?: number | string | null;
+  reviewCount?: number | string | null;
   posterUrl?: string | null;
   backdropUrl?: string | null;
   language?: string | null;
@@ -69,6 +71,8 @@ export type CustomerMovie = {
   genre: string;
   genres: string[];
   rating: number;
+  averageRating: number | null;
+  reviewCount: number;
   duration: string;
   durationMinutes: number;
   image: string;
@@ -144,6 +148,24 @@ function parsePrice(price?: number | string | null) {
   return null;
 }
 
+function parseNullableNumber(value?: number | string | null) {
+  if (typeof value === "number") {
+    return Number.isNaN(value) ? null : value;
+  }
+
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? null : parsed;
+  }
+
+  return null;
+}
+
+function parseCount(value?: number | string | null) {
+  const parsed = parseNullableNumber(value);
+  return parsed === null ? 0 : parsed;
+}
+
 function normalizeMovie(movie: AdminMovie): CustomerMovie {
   const staticMovie = getNowShowingMovieById(movie.id);
   const genres = movie.genres?.map((genre) => genre.name) ?? [];
@@ -175,12 +197,9 @@ function normalizeMovie(movie: AdminMovie): CustomerMovie {
     title: movie.title,
     genre: genres.join(" / ") || staticMovie?.genre || "Uncategorized",
     genres,
-    rating:
-      typeof movie.rating === "number"
-        ? movie.rating
-        : typeof movie.rating === "string"
-          ? Number(movie.rating)
-          : staticMovie?.rating || 0,
+    rating: parseNullableNumber(movie.averageRating) ?? 0,
+    averageRating: parseNullableNumber(movie.averageRating),
+    reviewCount: parseCount(movie.reviewCount),
     duration: formatDuration(movie.duration),
     durationMinutes: movie.duration || 0,
     image: movie.posterUrl || movie.backdropUrl || staticMovie?.image || "",

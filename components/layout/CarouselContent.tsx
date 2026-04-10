@@ -1,9 +1,10 @@
 "use client";
 
-import { JSXElementConstructor, Key, ReactElement, ReactNode, ReactPortal, SetStateAction, useEffect, useMemo, useState } from "react";
-import { Play, Clock, Star } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Play, Clock } from "lucide-react";
 import ButtonGray from "../ui/ButtonGray";
 import CustomerMovieService from "../services/CustomerMovieService";
+import MovieRatingBadge from "../ui/MovieRatingBadge";
 
 function splitTitle(title: string) {
   const parts = title.trim().split(" ");
@@ -70,11 +71,15 @@ export default function CarouselContent() {
   return (
     <section className="relative min-h-[90vh] flex items-center overflow-hidden pt-24">
       <div className="absolute inset-0">
-        <img
-          src={activeMovie.backdropUrl || activeMovie.posterUrl}
-          alt={activeMovie.title}
-          className="w-full h-full object-cover"
-        />
+        {activeMovie.backdropUrl || activeMovie.posterUrl ? (
+          <img
+            src={activeMovie.backdropUrl || activeMovie.posterUrl}
+            alt={activeMovie.title}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900" />
+        )}
         <div className="absolute inset-0 bg-gradient-to-r from-black via-black/70 to-transparent"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
       </div>
@@ -103,13 +108,11 @@ export default function CarouselContent() {
           </p>
 
           <div className="flex flex-wrap items-center gap-6 mb-8">
-            <div className="flex items-center gap-2">
-              <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
-              <span className="font-semibold text-white">
-                {activeMovie.rating || "NR"}
-              </span>
-              <span className="text-zinc-400 text-sm">IMDb</span>
-            </div>
+            <MovieRatingBadge
+              averageRating={activeMovie.averageRating}
+              reviewCount={activeMovie.reviewCount}
+              className="text-base"
+            />
             <div className="flex items-center gap-2">
               <Clock className="w-5 h-5 text-zinc-400" />
               <span className="text-zinc-300">{activeMovie.duration}</span>
@@ -120,10 +123,10 @@ export default function CarouselContent() {
             <div className="flex gap-2">
               {genres.length > 0
                 ? genres
-                    .filter((genre: any) => typeof genre === "string" || typeof genre === "number")
-                    .map((genre: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined, idx: string) => (
+                    .filter((genre): genre is string => typeof genre === "string")
+                    .map((genre) => (
                       <span
-                        key={String(genre) + idx}
+                        key={genre}
                         className="px-3 py-1 cursor-pointer hover:bg-white/20 transition-all bg-zinc-800 border border-zinc-700 rounded-md text-sm text-white"
                       >
                         {genre}
@@ -149,7 +152,7 @@ export default function CarouselContent() {
 
           {movies.length > 1 ? (
             <div className="mt-8 flex items-center gap-2">
-              {movies.map((movie: { id: Key | null | undefined; title: any; }, index: SetStateAction<number>) => (
+              {movies.map((movie, index) => (
                 <button
                   key={movie.id}
                   type="button"

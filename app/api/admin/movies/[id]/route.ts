@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { PrismaClient } from "@/app/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
+import { getMovieRatingSummary } from "@/lib/rating-service";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -59,7 +60,12 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(movie);
+    const ratingSummary = await getMovieRatingSummary(prisma, movie.id);
+
+    return NextResponse.json({
+      ...movie,
+      ...ratingSummary,
+    });
   } catch (error) {
     console.error("Error fetching movie:", error);
     return NextResponse.json(

@@ -54,7 +54,6 @@ export function CustomerRouteHeader() {
     <CustomerHeader
       currentPage={getCurrentPage(pathname)}
       onNavigate={handleNavigate}
-      onAdminClick={() => router.push("/admin/login")}
     />
   );
 }

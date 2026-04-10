@@ -2,10 +2,13 @@
 import { useState } from 'react';
 import { CreditCard, DollarSign } from 'lucide-react';
 
+import { Dispatch, SetStateAction } from 'react';
+
 interface PaymentFormProps {
   totalAmount: number;
   onPaymentMethodSelect: (method: string) => void;
   selectedMethod: string;
+  onChange: Dispatch<SetStateAction<string>>;
 }
 
 export function PaymentForm({ totalAmount, onPaymentMethodSelect, selectedMethod }: PaymentFormProps) {

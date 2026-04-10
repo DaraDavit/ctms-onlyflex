@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { memo, useState, useCallback } from 'react';
 import { Seat } from '@/types/seat';
 import { SeatCell } from './SeatCell';
 import { ScreenIndicator } from './ScreenIndicator';
@@ -33,7 +33,7 @@ const getAisleColumns = (totalColumns: number): number[] => {
   return aisles;
 };
 
-export function SeatGrid({
+export const SeatGrid = memo(function SeatGrid({
   seats,
   columns,
   selectedSeats,
@@ -213,4 +213,4 @@ export function SeatGrid({
       </div>
     </div>
   );
-}
+});

@@ -13,7 +13,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import ButtonGray from "@/components/ui/ButtonGray";
 import { ButtonRed } from "@/components/ui/ButtonRed";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,12 +22,11 @@ import CustomerMovieSearch from "@/components/layout/CustomerMovieSearch";
 interface CustomerHeaderProps {
   currentPage: string;
   onNavigate: (page: string) => void;
-  onAdminClick: () => void;
+  onAdminClick?: () => void;
 }
 
 export function CustomerHeader({ currentPage, onNavigate, onAdminClick }: CustomerHeaderProps) {
   const router = useRouter();
-  const pathname = usePathname();
   const { isAuthenticated, user, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -67,11 +66,6 @@ export function CustomerHeader({ currentPage, onNavigate, onAdminClick }: Custom
       default:
         break;
     }
-  };
-
-  const handleAuthRoute = (path: string) => {
-    const callbackUrl = encodeURIComponent(pathname || "/");
-    router.push(`${path}?callbackUrl=${callbackUrl}`);
   };
 
   useEffect(() => {
@@ -224,10 +218,10 @@ export function CustomerHeader({ currentPage, onNavigate, onAdminClick }: Custom
               </>
             ) : (
               <div className="hidden md:flex items-center gap-3">
-                <ButtonGray onClick={() => handleAuthRoute("/login")}>
-                  Login
+                <ButtonGray onClick={() => router.push("/login")}>
+                  Sign In
                 </ButtonGray>
-                <ButtonRed onClick={() => handleAuthRoute("/register")}>
+                <ButtonRed onClick={() => router.push("/register")}>
                   Register
                 </ButtonRed>
               </div>
@@ -294,25 +288,27 @@ export function CustomerHeader({ currentPage, onNavigate, onAdminClick }: Custom
               <div className="space-y-3">
                 <ButtonGray
                   className="w-full"
-                  onClick={() => handleAuthRoute("/login")}
+                  onClick={() => router.push("/login")}
                 >
                   Login
                 </ButtonGray>
                 <ButtonRed
                   className="w-full"
-                  onClick={() => handleAuthRoute("/register")}
+                  onClick={() => router.push("/register")}
                 >
                   Register
                 </ButtonRed>
               </div>
             )}
-            <button 
-              onClick={onAdminClick}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-zinc-900 border border-zinc-800 rounded-lg font-medium"
-            >
-              <Settings className="w-4 h-4" />
-              Admin Portal
-            </button>
+            {onAdminClick && (
+              <button 
+                onClick={onAdminClick}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-zinc-900 border border-zinc-800 rounded-lg font-medium"
+              >
+                <Settings className="w-4 h-4" />
+                Admin Portal
+              </button>
+            )}
           </div>
         )}
       </div>

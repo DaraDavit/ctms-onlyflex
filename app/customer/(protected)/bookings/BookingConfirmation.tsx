@@ -1,5 +1,5 @@
 "use client";
-import { CheckCircle, Download, Mail, Calendar, Clock, MapPin, Film, Users, Ticket, QrCode } from 'lucide-react';
+import { CheckCircle, Mail, Calendar, Clock, MapPin, Film, Users, Ticket } from 'lucide-react';
 
 interface BookingConfirmationProps {
   bookingId: string;
@@ -46,12 +46,22 @@ export function BookingConfirmation({
       {/* QR Code Placeholder */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8">
         <div className="flex flex-col items-center space-y-4">
-          <div className="w-48 h-48 bg-white rounded-lg flex items-center justify-center">
-            <QrCode className="w-32 h-32 text-black" />
+          <div className="rounded-2xl border border-zinc-800 bg-white p-3 shadow-lg">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=BK-${bookingId}`}
+              alt="Booking QR Code"
+              className="h-32 w-32 dark:invert-[0.05]"
+            />
           </div>
-          <p className="text-sm text-zinc-400 text-center">
-            Show this QR code at the cinema entrance
-          </p>
+          <div className="space-y-1 text-center">
+            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
+              Scan to Verify
+            </p>
+            <p className="text-[8px] font-mono text-zinc-500 break-all opacity-60">
+              BK-{bookingId}
+            </p>
+          </div>
         </div>
       </div>
 
@@ -122,7 +132,7 @@ export function BookingConfirmation({
       </div>
 
       {/* Action Buttons */}
-      <div className="flex gap-3">
+      {/* <div className="flex gap-3">
         <button className="flex-1 px-6 py-3 bg-gradient-to-r from-red-500 to-red-700 rounded-lg font-medium hover:shadow-lg hover:shadow-red-500/30 transition-all flex items-center justify-center gap-2">
           <Download className="w-5 h-5" />
           Download Ticket
@@ -131,7 +141,7 @@ export function BookingConfirmation({
           <Mail className="w-5 h-5" />
           Email Ticket
         </button>
-      </div>
+      </div> */}
 
       {/* Important Notes */}
       <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-4">

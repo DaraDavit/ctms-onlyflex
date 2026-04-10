@@ -1,8 +1,8 @@
 "use client";
 
-import { Search, X } from "lucide-react";
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Search, X } from "lucide-react";
 import CustomerMovieService from "@/components/services/CustomerMovieService";
 
 type CustomerMovieSearchProps = {
@@ -16,7 +16,7 @@ type Movie = {
   releaseDate: string;
 };
 
-export default function CustomerMovieSearch({
+function CustomerMovieSearchContent({
   mobile = false,
 }: CustomerMovieSearchProps) {
   const router = useRouter();
@@ -109,7 +109,7 @@ export default function CustomerMovieSearch({
               onBlur={() => setIsFocused(false)}
               onClick={() => setIsOpen(true)}
               placeholder="Search Movies..."
-className="w-full rounded-2xl border border-zinc-500 bg-zinc-950 py-2 pl-11 pr-11 text-sm text-white outline-none placeholder:text-zinc-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/30"            />
+              className="w-full rounded-2xl border border-zinc-500 bg-zinc-950 py-2 pl-11 pr-11 text-sm text-white outline-none placeholder:text-zinc-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/30"            />
             {isFocused || query ? (
               <button
                 type="button"
@@ -185,7 +185,7 @@ className="w-full rounded-2xl border border-zinc-500 bg-zinc-950 py-2 pl-11 pr-1
               }}
               onBlur={() => setIsFocused(false)}
               onClick={() => setIsOpen(true)}
-className="w-60 rounded-3xl border border-zinc-500 bg-zinc-900/95 py-2 pl-12 pr-12 text-base text-white outline-none placeholder:text-zinc-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/30"            />
+              className="w-60 rounded-3xl border border-zinc-500 bg-zinc-900/95 py-2 pl-12 pr-12 text-base text-white outline-none placeholder:text-zinc-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/30"            />
             {isFocused || query ? (
               <button
                 type="button"
@@ -239,5 +239,15 @@ className="w-60 rounded-3xl border border-zinc-500 bg-zinc-900/95 py-2 pl-12 pr-
         ) : null}
       </div>
     </div>
+  );
+}
+
+export default function CustomerMovieSearch(props: CustomerMovieSearchProps) {
+  return (
+    <Suspense fallback={
+      <div className="w-60 h-10 bg-zinc-900/50 rounded-3xl animate-pulse" />
+    }>
+      <CustomerMovieSearchContent {...props} />
+    </Suspense>
   );
 }

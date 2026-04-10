@@ -115,6 +115,17 @@ export function NowShowing() {
               const detailsHref = movie.id
                 ? `/customer/movies/view/${movie.id}`
                 : "/customer/movies";
+              const cardHref = detailsHref;
+              const posterContent = (
+                <>
+                  <img
+                    src={movie.image || "/placeholder.png"}
+                    alt={movie.title}
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+                </>
+              );
 
               return (
                 <article
@@ -125,7 +136,7 @@ export function NowShowing() {
                     href={detailsHref}
                     className="relative block aspect-[3/4] overflow-hidden"
                   >
-                    <img
+                    <ImageWithFallback
                       src={movie.image || "/placeholder.png"}
                       alt={movie.title}
                       className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
@@ -136,7 +147,7 @@ export function NowShowing() {
                     <h3 className="mb-2 text-lg font-bold transition-colors group-hover:text-red-500">
                       {movie.title}
                     </h3>
-                    <p className="mb-4 text-sm text-zinc-400">
+                    <p className=" text-md text-zinc-400">
                       {movie.releaseDate}
                     </p>
                   </div>
