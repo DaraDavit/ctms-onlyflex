@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CTMS - Cinema Ticket Management System",
+  title: "CTMS - OnlyFlex",
   description: "Modern Cinema Management & Booking Platform",
 };
 
