@@ -74,6 +74,25 @@ docker compose exec app npx prisma migrate deploy
 http://YOUR_SERVER_IP:3000
 ```
 
+### 8. Database GUI (Prisma Studio)
+
+**Option 1 - Local with remote DB (recommended):**
+Run on your local machine:
+
+```bash
+# Get POSTGRES_PASSWORD from your server's .env
+npx prisma studio --url "postgresql://postgres:[PASSWORD]@YOUR_SERVER_IP:5432/moviedb"
+```
+
+**Option 2 - SSH port forward:**
+```bash
+# On your local machine, create tunnel
+ssh -L 5556:localhost:5556 user@YOUR_SERVER_IP
+
+# On server (if Prisma Studio is running)
+# Access via http://localhost:5556
+```
+
 ## Troubleshooting
 
 ### Check Container Status
