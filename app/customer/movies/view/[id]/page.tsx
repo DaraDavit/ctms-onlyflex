@@ -277,10 +277,10 @@ export default function MovieDetailPage() {
               </p>
 
               <div className="flex flex-wrap gap-4">
-                <ButtonRed className="flex p-4 items-center gap-2 rounded-lg bg-gradient-to-r from-red-500 to-red-700 px-8 py-4 text-lg font-bold transition-all hover:shadow-lg hover:shadow-red-500/30">
-                  <Play className="h-5 w-5 fill-white" />
-                  Watch Trailer
-                </ButtonRed>
+                {/* <ButtonRed className="flex p-4 items-center gap-2 rounded-lg bg-gradient-to-r from-red-500 to-red-700 px-8 py-4 text-lg font-bold transition-all hover:shadow-lg hover:shadow-red-500/30"> */}
+                {/*   <Play className="h-5 w-5 fill-white" /> */}
+                {/*   Watch Trailer */}
+                {/* </ButtonRed> */}
                 <ButtonGray
                   type="button"
                   onClick={() => {
